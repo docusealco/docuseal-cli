@@ -9,6 +9,81 @@ import { renderJson, renderSuccess, renderError } from './lib/output.ts'
 const require = createRequire(import.meta.url)
 const spec = require('../openapi-spec.json')
 
+// ── Bracket notation parser (-d flag) ───────────────────────────
+
+function parseDataFlags(pairs: string[]): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+
+  for (const pair of pairs) {
+    const eqIdx = pair.indexOf('=')
+    if (eqIdx === -1) continue
+
+    const rawKey = pair.slice(0, eqIdx)
+    const value = pair.slice(eqIdx + 1)
+
+    // Parse key into segments: "submitters[0][email]" → ["submitters", "0", "email"]
+    const segments: string[] = []
+    const firstBracket = rawKey.indexOf('[')
+    if (firstBracket === -1) {
+      segments.push(rawKey)
+    } else {
+      segments.push(rawKey.slice(0, firstBracket))
+      const rest = rawKey.slice(firstBracket)
+      for (const m of rest.matchAll(/\[([^\]]*)\]/g)) {
+        segments.push(m[1])
+      }
+    }
+
+    // Build nested structure
+    let current: any = result
+    for (let i = 0; i < segments.length - 1; i++) {
+      const seg = segments[i]
+      const nextSeg = segments[i + 1]
+      const nextIsIndex = /^\d+$/.test(nextSeg) || nextSeg === ''
+
+      if (current[seg] === undefined) {
+        current[seg] = nextIsIndex ? [] : {}
+      }
+      current = current[seg]
+    }
+
+    const lastSeg = segments[segments.length - 1]
+    if (lastSeg === '') {
+      // "ids[]=1" → push to array
+      if (Array.isArray(current)) {
+        current.push(value)
+      }
+    } else {
+      current[lastSeg] = value
+    }
+  }
+
+  return result
+}
+
+function deepMerge(target: Record<string, any>, source: Record<string, any>): Record<string, any> {
+  for (const key of Object.keys(source)) {
+    if (Array.isArray(source[key]) && Array.isArray(target[key])) {
+      // Merge arrays by index
+      for (let i = 0; i < source[key].length; i++) {
+        if (source[key][i] !== undefined) {
+          if (typeof source[key][i] === 'object' && typeof target[key][i] === 'object') {
+            target[key][i] = deepMerge(target[key][i], source[key][i])
+          } else {
+            target[key][i] = source[key][i]
+          }
+        }
+      }
+    } else if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key]) &&
+               target[key] && typeof target[key] === 'object' && !Array.isArray(target[key])) {
+      target[key] = deepMerge(target[key], source[key])
+    } else {
+      target[key] = source[key]
+    }
+  }
+  return target
+}
+
 // ── Naming helpers ──────────────────────────────────────────────────
 
 type CommandName = { topic: string; command: string }
@@ -102,9 +177,6 @@ type BodyParam = {
   enumValues?: string[]
 }
 
-// Simple array body params that can be passed as comma-separated strings
-const SIMPLE_ARRAY_PARAMS = new Set(['template_ids', 'roles', 'emails'])
-
 function extractBodyParams(operation: any): BodyParam[] {
   const schema = operation.requestBody?.content?.['application/json']?.schema
   if (!schema?.properties) return []
@@ -113,18 +185,7 @@ function extractBodyParams(operation: any): BodyParam[] {
   const params: BodyParam[] = []
 
   for (const [name, prop] of Object.entries(schema.properties) as any[]) {
-    // Allow simple array params as comma-separated string flags
-    if (prop.type === 'array' && SIMPLE_ARRAY_PARAMS.has(name)) {
-      params.push({
-        name,
-        type: 'string',
-        required: required.includes(name),
-        description: (prop.description || '') + ' (comma-separated)',
-        enumValues: prop.enum,
-      })
-      continue
-    }
-    // Skip complex types (arrays, objects) — they need custom flags
+    // Skip complex types (arrays, objects) — use -d flag for these
     if (prop.type === 'array' || prop.type === 'object') continue
     params.push({
       name,
@@ -173,6 +234,11 @@ function buildCommandClass(
       char: 'j',
       description: 'Output raw JSON (skip success message)',
       hidden: true,
+    }),
+    data: Flags.string({
+      char: 'd',
+      description: 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")',
+      multiple: true,
     }),
   }
 
@@ -226,13 +292,7 @@ function buildCommandClass(
   // Custom flags from overrides
   const customFlags = override?.customFlags || {}
   for (const [name, def] of Object.entries(customFlags)) {
-    if (def.type === 'repeatable') {
-      commandFlags[name] = Flags.string({
-        description: def.description + (def.format ? ` (${def.format})` : ''),
-        required: def.required || false,
-        multiple: true,
-      })
-    } else if (def.type === 'boolean') {
+    if (def.type === 'boolean') {
       commandFlags[name] = Flags.string({
         description: def.description,
         options: ['true', 'false'],
@@ -250,26 +310,10 @@ function buildCommandClass(
       })
     }
 
-    // Remove spec-generated flag if custom flag fully replaces the body param
-    // e.g. 'submitter' replaces 'submitters', 'file' replaces 'documents'
-    // But keep the spec flag if custom flag is an alternative (e.g. html-file alternative to html)
-    if (def.mapsTo && (def.mapsTo.includes('[') || def.mapsTo.includes('.'))) {
+    // If custom flag maps to a body param, make the spec flag not required
+    if (def.mapsTo) {
       const baseParam = def.mapsTo.split('[')[0].split('.')[0]
       const baseFlagName = paramToFlagName(baseParam)
-      if (baseFlagName !== name && commandFlags[baseFlagName]) {
-        delete commandFlags[baseFlagName]
-      }
-    }
-    // For repeatable custom flags that map to array body params, remove the spec flag
-    if (def.mapsTo && def.type === 'repeatable') {
-      const baseFlagName = paramToFlagName(def.mapsTo)
-      if (baseFlagName !== name && commandFlags[baseFlagName]) {
-        delete commandFlags[baseFlagName]
-      }
-    }
-    // If custom flag is an alternative to a spec flag, make the spec flag not required
-    if (def.mapsTo && !def.mapsTo.includes('[') && !def.mapsTo.includes('.') && def.type !== 'repeatable') {
-      const baseFlagName = paramToFlagName(def.mapsTo)
       if (baseFlagName !== name && commandFlags[baseFlagName]) {
         const existing = commandFlags[baseFlagName]
         commandFlags[baseFlagName] = Flags.string({
@@ -332,12 +376,6 @@ function buildCommandClass(
           hasBody = true
           if (param.type === 'boolean') {
             body[param.name] = val === 'true'
-          } else if (SIMPLE_ARRAY_PARAMS.has(param.name)) {
-            // Split comma-separated values into array, convert to numbers if needed
-            const parts = String(val).split(',').map(s => s.trim())
-            body[param.name] = param.name === 'template_ids'
-              ? parts.map(Number)
-              : parts
           } else {
             body[param.name] = val
           }
@@ -349,11 +387,7 @@ function buildCommandClass(
         const val = flags[name]
         if (val === undefined) continue
 
-        if (def.mapsTo === 'submitters' && def.type === 'repeatable') {
-          hasBody = true
-          const values = Array.isArray(val) ? val : [val]
-          body.submitters = values.map((v: string) => def.parse ? def.parse(v) : v)
-        } else if (def.mapsTo === 'html' && name === 'html-file') {
+        if (def.mapsTo === 'html' && name === 'html-file') {
           hasBody = true
           const content = readFileSync(val as string, 'utf8')
           body.html = content
@@ -363,14 +397,18 @@ function buildCommandClass(
           const base64 = Buffer.from(fileContent).toString('base64')
           const fileName = (val as string).split('/').pop() || 'document'
           body.documents = [{ name: fileName, file: `data:application/octet-stream;base64,${base64}` }]
-        } else if (def.mapsTo === 'values' && def.type === 'repeatable') {
-          hasBody = true
-          const values = Array.isArray(val) ? val : [val]
-          body.values = values.map((v: string) => def.parse ? def.parse(v) : v)
         } else if (def.mapsTo && !def.mapsTo.startsWith('__')) {
           hasBody = true
           body[def.mapsTo] = val
         }
+      }
+
+      // Handle -d / --data flags (bracket notation)
+      const dataFlags = flags.data as string[] | undefined
+      if (dataFlags && dataFlags.length > 0) {
+        hasBody = true
+        const parsed = parseDataFlags(dataFlags)
+        deepMerge(body as Record<string, any>, parsed)
       }
 
       try {

@@ -1,11 +1,9 @@
 export type CustomFlag = {
-  type: 'string' | 'boolean' | 'integer' | 'repeatable'
+  type: 'string' | 'boolean' | 'integer'
   description: string
   required?: boolean
   char?: string
   mapsTo?: string
-  parse?: (value: string) => unknown
-  format?: string
 }
 
 export type CommandOverride = {
@@ -13,15 +11,6 @@ export type CommandOverride = {
   errorHint?: string
   examples?: string[]
   successMessage?: (result: Record<string, unknown>) => string
-}
-
-function parseKeyValueFlag(value: string): Record<string, string> {
-  return Object.fromEntries(
-    value.split(',').map(pair => {
-      const idx = pair.indexOf('=')
-      return [pair.slice(0, idx).trim(), pair.slice(idx + 1).trim()]
-    })
-  )
 }
 
 export const overrides: Record<string, CommandOverride> = {
@@ -153,21 +142,11 @@ export const overrides: Record<string, CommandOverride> = {
   },
 
   'POST /submissions': {
-    customFlags: {
-      submitter: {
-        type: 'repeatable',
-        description: 'Submitter in format: role=X,email=Y,name=Z (can be repeated)',
-        format: 'role=Signer,email=john@acme.com,name="John Doe"',
-        required: true,
-        mapsTo: 'submitters',
-        parse: parseKeyValueFlag,
-      },
-    },
     examples: [
-      'docuseal submissions create --template-id 1001 --submitter role=Signer,email=john@acme.com',
-      'docuseal submissions create --template-id 1001 --submitter email=a@b.com --submitter email=c@d.com',
-      'docuseal submissions create --template-id 1001 --submitter email=john@acme.com --send-email false',
-      'docuseal submissions create --template-id 1001 --submitter email=john@acme.com --expire-at "2025-12-31"',
+      'docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com"',
+      'docuseal submissions create --template-id 1001 -d "submitters[0][email]=a@b.com" -d "submitters[1][email]=c@d.com"',
+      'docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com" -d "submitters[0][role]=Signer"',
+      'docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com" --send-email false',
     ],
     successMessage: (result) => {
       const submitters = result as any
@@ -197,17 +176,9 @@ export const overrides: Record<string, CommandOverride> = {
         required: true,
         mapsTo: 'documents[0].file',
       },
-      submitter: {
-        type: 'repeatable',
-        description: 'Submitter in format: role=X,email=Y',
-        format: 'role=Signer,email=john@acme.com',
-        required: true,
-        mapsTo: 'submitters',
-        parse: parseKeyValueFlag,
-      },
     },
     examples: [
-      'docuseal submissions create-pdf --file doc.pdf --submitter email=john@acme.com',
+      'docuseal submissions create-pdf --file doc.pdf -d "submitters[0][email]=john@acme.com"',
     ],
   },
 
@@ -219,16 +190,9 @@ export const overrides: Record<string, CommandOverride> = {
         required: true,
         mapsTo: 'documents[0].file',
       },
-      submitter: {
-        type: 'repeatable',
-        description: 'Submitter in format: role=X,email=Y',
-        required: true,
-        mapsTo: 'submitters',
-        parse: parseKeyValueFlag,
-      },
     },
     examples: [
-      'docuseal submissions create-docx --file doc.docx --submitter email=john@acme.com',
+      'docuseal submissions create-docx --file doc.docx -d "submitters[0][email]=john@acme.com"',
     ],
   },
 
@@ -239,16 +203,9 @@ export const overrides: Record<string, CommandOverride> = {
         description: 'Path to local HTML file',
         mapsTo: 'html',
       },
-      submitter: {
-        type: 'repeatable',
-        description: 'Submitter in format: role=X,email=Y',
-        required: true,
-        mapsTo: 'submitters',
-        parse: parseKeyValueFlag,
-      },
     },
     examples: [
-      'docuseal submissions create-html --html "<p>{{name}}</p>" --submitter email=john@acme.com',
+      'docuseal submissions create-html --html "<p>{{name}}</p>" -d "submitters[0][email]=john@acme.com"',
     ],
   },
 

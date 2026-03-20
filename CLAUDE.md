@@ -79,7 +79,7 @@ docuseal-cli/
 
 - Keyed by `"METHOD /path"` matching the OpenAPI spec exactly
 - Each entry is partial — only override what needs customization
-- `customFlags` — additional flags not in spec (e.g. --submitter that maps to body.submitters[])
+- `customFlags` — additional flags not in spec (e.g. --file for local file upload with base64 encoding)
 - `errorHint` — hint string shown below error message
 - `examples` — array of example strings for --help output
 - `successMessage(result)` — function returning string for success output
@@ -93,11 +93,14 @@ docuseal-cli/
 - Enum params → validated against allowed values
 - Required params → oclif `required: true`
 - Custom flags from overrides → added on top, take precedence for naming
+- `-d` / `--data` flag on every command — Stripe-style bracket notation for nested/array body params
+- `parseDataFlags()` parses bracket notation into nested objects/arrays, deep-merged into body
 
 ---
 
 ## Global Flags (on every command)
 
+- `-d` / `--data` — set body params with bracket notation, repeatable (e.g. `-d "submitters[0][email]=john@acme.com"`)
 - `--api-key` — override API key for this invocation
 - `--server` — override server: `com`, `eu`, or full URL for self-hosted
 
@@ -148,5 +151,5 @@ Distribution: `npx @docuseal/cli` or `npm install -g @docuseal/cli`
 ```bash
 DOCUSEAL_API_KEY=your_key npm run dev -- --help
 DOCUSEAL_API_KEY=your_key npm run dev -- templates list
-DOCUSEAL_API_KEY=your_key npm run dev -- submissions create --template-id 1 --submitter email=test@example.com
+DOCUSEAL_API_KEY=your_key npm run dev -- submissions create --template-id 1 -d "submitters[0][email]=test@example.com"
 ```

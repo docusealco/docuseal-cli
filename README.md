@@ -213,18 +213,20 @@ Send a template for signing:
 # Single submitter
 docuseal submissions create \
   --template-id 1001 \
-  --submitter email=john@acme.com
+  -d "submitters[0][email]=john@acme.com"
 
 # Multiple submitters with roles
 docuseal submissions create \
   --template-id 1001 \
-  --submitter role=Signer,email=john@acme.com \
-  --submitter role=Witness,email=jane@acme.com
+  -d "submitters[0][role]=Signer" \
+  -d "submitters[0][email]=john@acme.com" \
+  -d "submitters[1][role]=Witness" \
+  -d "submitters[1][email]=jane@acme.com"
 
 # With options
 docuseal submissions create \
   --template-id 1001 \
-  --submitter email=john@acme.com \
+  -d "submitters[0][email]=john@acme.com" \
   --send-email false \
   --expire-at "2025-12-31" \
   --order random
@@ -244,7 +246,7 @@ Skip template creation — send a tagged PDF directly for signing:
 ```bash
 docuseal submissions create-pdf \
   --file document.pdf \
-  --submitter email=john@acme.com
+  -d "submitters[0][email]=john@acme.com"
 ```
 
 ### Create Submission from DOCX
@@ -252,7 +254,7 @@ docuseal submissions create-pdf \
 ```bash
 docuseal submissions create-docx \
   --file document.docx \
-  --submitter email=john@acme.com
+  -d "submitters[0][email]=john@acme.com"
 ```
 
 ### Send by Email
@@ -324,6 +326,7 @@ These flags work on every command:
 
 | Flag          | Description                                   |
 |---------------|-----------------------------------------------|
+| `-d`, `--data`| Set body params with bracket notation (repeatable) |
 | `--api-key`   | Override API key for this invocation           |
 | `--server`    | Server: `com`, `eu`, or full URL               |
 
@@ -358,7 +361,7 @@ docuseal templates list --server https://docuseal.mycompany.com
 while IFS= read -r email; do
   docuseal submissions create \
     --template-id 1001 \
-    --submitter "email=$email" \
+    -d "submitters[0][email]=$email" \
     --send-email true
 done < emails.txt
 ```
@@ -381,7 +384,7 @@ template_id=$(docuseal templates create-pdf --file nda.pdf --name "NDA" | jq '.i
 # Send for signing
 docuseal submissions create \
   --template-id "$template_id" \
-  --submitter email=john@acme.com
+  -d "submitters[0][email]=john@acme.com"
 ```
 
 ### CI/CD Integration
