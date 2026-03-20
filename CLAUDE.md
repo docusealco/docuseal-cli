@@ -5,8 +5,8 @@
 This CLI is **spec-driven with UX overrides**.
 
 - `openapi-spec.json` — fetched from the live DocuSeal API, source of truth for all endpoints/params
-- `src/ux-overrides.ts` — hand-crafted UX layer: custom flags, error hints, examples
-- `src/generator.ts` — merges spec + overrides → registers all oclif commands at runtime
+- `src/ux-overrides.ts` — hand-crafted UX layer: custom flags, examples
+- `src/generator.ts` — merges spec + overrides → registers commander commands at runtime
 - `src/lib/` — HTTP client, config, output helpers
 
 When the DocuSeal API changes:
@@ -28,17 +28,17 @@ docuseal-cli/
   dist/
     index.js                 # bundled output (esbuild)
   src/
-    index.ts                 # oclif entrypoint
+    index.ts                 # commander entrypoint
     generator.ts             # reads spec + overrides, registers commands
-    ux-overrides.ts          # UX layer: custom flags, hints, examples
+    ux-overrides.ts          # UX layer: custom flags, examples
     lib/
       api.ts                 # apiFetch() — all HTTP goes here
       config.ts              # ~/.docuseal/config.yml read/write
       output.ts              # renderJson, renderSuccess, renderError
       errors.ts              # DocuSealError, handleApiError
     commands/
-      configure.ts           # special case — not generated, written manually
-      whoami.ts              # special case — not generated, written manually
+      configure.ts           # configure command (interactive setup + --list)
+      raw.ts                 # raw HTTP commands (get, post, put, delete)
   scripts/
     sync-spec.ts             # fetches openapi.yml → saves as openapi-spec.json
   package.json
@@ -50,9 +50,8 @@ docuseal-cli/
 ## Tech Stack
 
 - Runtime: Node.js
-- CLI framework: @oclif/core
+- CLI framework: commander
 - HTTP: native fetch
-- Output: chalk (colors), ora (spinners)
 - Config: yaml (read/write ~/.docuseal/config.yml)
 - Dev: tsx (TypeScript execution), esbuild (bundling)
 
@@ -64,15 +63,14 @@ docuseal-cli/
 - Always reads base URL + API key from `loadConfig()`
 - Builds query string from `opts.query`, skipping null/undefined values
 - Sets `X-Auth-Token` header
-- Shows ora spinner during request, stops it after
-- On non-2xx: stops spinner, calls `handleApiError(res, url)`
+- On non-2xx: calls `handleApiError(res, url)` which throws `DocuSealError` with the raw response body
 - Never use `fetch()` directly anywhere outside this file
 
 ## lib/output.ts Rules
 
 - `renderJson(data)` — JSON.stringify with 2-space indent
-- `renderSuccess(message, details?)` — chalk.green("✓") + message + optional key/value rows
-- `renderError(message, hint?)` — chalk.red("✗") + message + optional muted hint line
+- `renderSuccess(message, details?)` — "✓" + message + optional key/value rows
+- `renderError(message, hint?)` — "✗" + message + optional hint line
 - Never use `console.log()` directly in generator or command files
 
 ## ux-overrides.ts Rules
@@ -80,7 +78,6 @@ docuseal-cli/
 - Keyed by `"METHOD /path"` matching the OpenAPI spec exactly
 - Each entry is partial — only override what needs customization
 - `customFlags` — additional flags not in spec (e.g. --file for local file upload with base64 encoding)
-- `errorHint` — hint string shown below error message
 - `examples` — array of example strings for --help output
 - `successMessage(result)` — function returning string for success output
 
@@ -88,13 +85,16 @@ docuseal-cli/
 
 - Iterates over all paths in openapi-spec.json
 - For each operation: merges spec params with ux-overrides for that path
-- Builds oclif Command class dynamically
+- Registers commander commands via fluent API (`program.command(topic).command(action)`)
 - Spec params → flags automatically (string/integer/boolean based on schema type)
-- Enum params → validated against allowed values
-- Required params → oclif `required: true`
+- Boolean params → real boolean flags (`--flag` / `--no-flag`)
+- Enum params → validated against allowed values via `.choices()`
+- Required params → `.makeOptionMandatory()`
 - Custom flags from overrides → added on top, take precedence for naming
 - `-d` / `--data` flag on every command — Stripe-style bracket notation for nested/array body params
 - `parseDataFlags()` parses bracket notation into nested objects/arrays, deep-merged into body
+- Short flags: `-l` (limit), `-a` (after), `-d` (data)
+- API errors → raw JSON output (like Stripe CLI)
 
 ---
 
@@ -115,13 +115,14 @@ Priority: CLI flag > env var > config file
 
 ---
 
-## Error Message Format
+## Error Format
 
-```
-✗  Not found (404)
-   GET api.docuseal.com/templates/99999
+API errors output raw JSON from the server:
 
-   Run `docuseal templates list` to see available IDs.
+```json
+{
+  "error": "Not found"
+}
 ```
 
 ## Success Message Format
@@ -152,4 +153,6 @@ Distribution: `npx @docuseal/cli` or `npm install -g @docuseal/cli`
 DOCUSEAL_API_KEY=your_key npm run dev -- --help
 DOCUSEAL_API_KEY=your_key npm run dev -- templates list
 DOCUSEAL_API_KEY=your_key npm run dev -- submissions create --template-id 1 -d "submitters[0][email]=test@example.com"
+DOCUSEAL_API_KEY=your_key npm run dev -- get /templates
+DOCUSEAL_API_KEY=your_key npm run dev -- post /submissions -d "template_id=1"
 ```

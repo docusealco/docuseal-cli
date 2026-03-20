@@ -25,12 +25,11 @@
 | Update | `templates update 1001` | `customers update cus_xxx` |
 | Delete | `templates archive 1001` | `customers delete cus_xxx` |
 | Variants | `templates create-pdf`, `templates create-docx` | N/A |
-| Raw HTTP | N/A | `stripe get /v1/...`, `stripe post /v1/...` |
+| Raw HTTP | `docuseal get /templates`, `docuseal post /templates/pdf` | `stripe get /v1/...`, `stripe post /v1/...` |
 
 **Differences:**
 - DocuSeal uses `archive` for delete, Stripe uses `delete`
 - DocuSeal resource names are kebab-case, Stripe keeps API snake_case (`payment_intents`)
-- Stripe has raw HTTP commands (`get`, `post`, `delete`), DocuSeal does not
 
 ## Flag Naming
 
@@ -45,10 +44,7 @@
 | ID argument | Positional (`templates retrieve 1001`) | Positional (`customers retrieve cus_xxx`) |
 | Short flags | `-d` (data), `-l` (limit), `-a` (after) | `-d` (data), `-l` (limit), `-a` (starting-after) |
 
-**Differences:**
-- Both use real boolean flags with `--no-` prefix for negation
-- Both use `-d` for bracket-notation nested params
-- Both convert API snake_case to CLI kebab-case
+No major differences. Flag conventions are nearly identical.
 
 ## Output
 
@@ -62,7 +58,6 @@
 **Differences:**
 - Stripe colorizes JSON output, DocuSeal prints plain JSON
 - DocuSeal shows friendly success messages for mutating operations, Stripe always shows raw JSON
-- Both output JSON by default, neither has table mode
 
 ## Authentication
 
@@ -83,8 +78,6 @@
 **Differences:**
 - Stripe uses browser-based OAuth flow by default, DocuSeal prompts in terminal
 - Stripe supports multiple profiles, DocuSeal has one config
-- Both validate the key during setup
-- Same priority chain: flag > env > file
 
 ## Error Handling
 
@@ -112,7 +105,7 @@
 }
 ```
 
-Both dump the raw API error JSON.
+Stripe includes structured error codes and doc links; DocuSeal returns the API error as-is.
 
 ## Global Flags
 
@@ -139,7 +132,7 @@ Both dump the raw API error JSON.
 | Cursor flag | `--after` / `-a` | `--starting-after` / `-a` |
 | Auto-pagination | No | No |
 
-Both expose pagination as simple flags without automatic pagination loops.
+No major differences. Same approach to pagination.
 
 ## Special Commands
 
@@ -148,7 +141,7 @@ Both expose pagination as simple flags without automatic pagination loops.
 | Webhook listener | N/A | `stripe listen --forward-to localhost:4242` |
 | Event trigger | N/A | `stripe trigger checkout.session.completed` |
 | Log streaming | N/A | `stripe logs tail` |
-| Raw HTTP | N/A | `stripe get/post/delete <path>` |
+| Raw HTTP | `docuseal get/post/put/delete <path>` | `stripe get/post/delete <path>` |
 | Test fixtures | N/A | `stripe fixtures` |
 | Dashboard open | N/A | `stripe open` |
 | Samples | N/A | `stripe samples` |
@@ -167,6 +160,7 @@ Stripe has significantly more special commands. DocuSeal focuses on CRUD operati
 - Short flags: `-l` (limit), `-a` (cursor), `-d` (data)
 - Positional ID arguments
 - Raw API JSON for errors
+- Raw HTTP commands (`get`, `post`, `put`, `delete`)
 - `configure --list` to show current config
 - Same config priority chain (flag > env > file)
 - Same pagination approach (manual, no auto-pagination)
@@ -175,5 +169,5 @@ Stripe has significantly more special commands. DocuSeal focuses on CRUD operati
 - DocuSeal shows friendly success messages for mutations; Stripe always shows raw JSON
 - DocuSeal uses `archive`; Stripe uses `delete`
 - DocuSeal does not colorize JSON output
-- Stripe has many more special commands (listen, trigger, logs, raw HTTP)
+- Stripe has more special commands (listen, trigger, logs, fixtures, samples)
 - Stripe resource names keep API snake_case; DocuSeal uses kebab-case

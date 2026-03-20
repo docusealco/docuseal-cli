@@ -59,7 +59,10 @@ TOPICS
 
 COMMANDS
   configure    Configure API key and server
-  whoami       Verify authentication
+  get          Make a raw GET request to the API
+  post         Make a raw POST request to the API
+  put          Make a raw PUT request to the API
+  delete       Make a raw DELETE request to the API
 ```
 
 Every command supports `--help` for full usage details:
@@ -82,6 +85,14 @@ docuseal configure
 
 ```bash
 docuseal configure --api-key YOUR_KEY --server com
+```
+
+### Show Current Config
+
+```bash
+docuseal configure --list
+# api_key: vS7EwXPy...kDmq
+# server: https://api.docuseal.com
 ```
 
 ### Environment Variables
@@ -110,14 +121,6 @@ server: https://api.docuseal.com
 | `eu`  | `https://api.docuseal.eu`  |
 | URL   | Your self-hosted instance  |
 
-### Verify Authentication
-
-```bash
-docuseal whoami
-# ✓ Authenticated
-#   server: https://api.docuseal.com
-```
-
 ---
 
 ## Templates
@@ -126,14 +129,14 @@ docuseal whoami
 
 ```bash
 docuseal templates list
-docuseal templates list --folder Legal --limit 50
+docuseal templates list --folder Legal -l 50
 docuseal templates list --archived
 ```
 
-### Get Template Details
+### Retrieve Template
 
 ```bash
-docuseal templates get 1001
+docuseal templates retrieve 1001
 ```
 
 ### Create Template from PDF
@@ -202,7 +205,7 @@ docuseal templates archive 1001
 ```bash
 docuseal submissions list
 docuseal submissions list --status pending
-docuseal submissions list --template-id 1001 --limit 50
+docuseal submissions list --template-id 1001 -l 50
 ```
 
 ### Create Submission
@@ -227,7 +230,7 @@ docuseal submissions create \
 docuseal submissions create \
   --template-id 1001 \
   -d "submitters[0][email]=john@acme.com" \
-  --send-email false \
+  --no-send-email \
   --expire-at "2025-12-31" \
   --order random
 ```
@@ -267,10 +270,10 @@ docuseal submissions send-emails \
   --emails john@acme.com,jane@acme.com
 ```
 
-### Get Submission Details
+### Retrieve Submission
 
 ```bash
-docuseal submissions get 502
+docuseal submissions retrieve 502
 ```
 
 ### Get Submission Documents
@@ -298,10 +301,10 @@ docuseal submitters list
 docuseal submitters list --submission-id 502
 ```
 
-### Get Submitter Details
+### Retrieve Submitter
 
 ```bash
-docuseal submitters get 201
+docuseal submitters retrieve 201
 ```
 
 ### Update Submitter
@@ -311,11 +314,32 @@ docuseal submitters get 201
 docuseal submitters update 201 --email new@acme.com
 
 # Mark as completed (auto-sign via API)
-docuseal submitters update 201 --completed true
+docuseal submitters update 201 --completed
 
 # Re-send signature request
-docuseal submitters update 201 --send-email true
+docuseal submitters update 201 --send-email
 # ✓ Submitter updated  #201
+```
+
+---
+
+## Raw HTTP Commands
+
+Make direct API requests, like `stripe get /v1/...`:
+
+```bash
+# GET request
+docuseal get /templates
+docuseal get '/templates?limit=5'
+
+# POST request with data
+docuseal post /submissions -d "template_id=1001" -d "submitters[0][email]=john@acme.com"
+
+# PUT request
+docuseal put /templates/1001 -d "name=Updated NDA"
+
+# DELETE request
+docuseal delete /templates/1001
 ```
 
 ---
@@ -329,6 +353,8 @@ These flags work on every command:
 | `-d`, `--data`| Set body params with bracket notation (repeatable) |
 | `--api-key`   | Override API key for this invocation           |
 | `--server`    | Server: `com`, `eu`, or full URL               |
+| `-l`, `--limit` | Limit number of results (on list commands)   |
+| `-a`, `--after` | Cursor for pagination (on list commands)      |
 
 All commands output JSON by default. Pipe to `jq` or other tools:
 
@@ -337,7 +363,7 @@ All commands output JSON by default. Pipe to `jq` or other tools:
 docuseal templates list | jq '.data[].id'
 
 # Get submission status
-docuseal submissions get 502 | jq '.status'
+docuseal submissions retrieve 502 | jq '.status'
 
 # Export submitters to CSV
 docuseal submitters list | jq -r '.data[] | [.id, .email, .status] | @csv'
@@ -362,14 +388,14 @@ while IFS= read -r email; do
   docuseal submissions create \
     --template-id 1001 \
     -d "submitters[0][email]=$email" \
-    --send-email true
+    --send-email
 done < emails.txt
 ```
 
 ### Check Submission Status
 
 ```bash
-status=$(docuseal submissions get 502 | jq -r '.status')
+status=$(docuseal submissions retrieve 502 | jq -r '.status')
 if [ "$status" = "completed" ]; then
   echo "All signed!"
 fi
@@ -447,7 +473,7 @@ npm unlink -g @docuseal/cli
 npm run build
 ```
 
-Bundles everything into `dist/index.js` (28KB) using esbuild. The OpenAPI spec is inlined into the bundle.
+Bundles everything into `dist/index.js` (~25KB) using esbuild. The OpenAPI spec is inlined into the bundle.
 
 ### Publish
 
@@ -462,10 +488,10 @@ Build runs automatically via `prepublishOnly`.
 The CLI is **spec-driven with UX overrides**:
 
 - `openapi-spec.json` — source of truth for all endpoints and parameters
-- `src/generator.ts` — reads the spec, builds oclif commands dynamically
-- `src/ux-overrides.ts` — hand-crafted UX layer: custom flags, table columns, error hints, examples
+- `src/generator.ts` — reads the spec, registers commander commands dynamically
+- `src/ux-overrides.ts` — hand-crafted UX layer: custom flags, examples, success messages
 - `src/lib/` — HTTP client, config, output helpers
-- `src/commands/` — manually written commands (`configure`, `whoami`)
+- `src/commands/` — manually written commands (`configure`, raw HTTP)
 
 When adding support for a new API feature, you typically only need to edit `ux-overrides.ts`.
 
