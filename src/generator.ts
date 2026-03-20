@@ -4,7 +4,7 @@ import { createRequire } from 'module'
 import { overrides, type CommandOverride, type CustomFlag } from './ux-overrides.ts'
 import { apiFetch } from './lib/api.ts'
 import { DocuSealError } from './lib/errors.ts'
-import { renderJson, renderSuccess } from './lib/output.ts'
+import { renderJson } from './lib/output.ts'
 
 const require = createRequire(import.meta.url)
 const spec = require('../openapi-spec.json')
@@ -409,11 +409,6 @@ function registerCommand(
         body: hasBody ? body : undefined,
         configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
       })
-
-      if (override?.successMessage) {
-        renderSuccess(override.successMessage(result as Record<string, unknown>))
-        return
-      }
 
       renderJson(result)
     } catch (err) {

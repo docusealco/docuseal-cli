@@ -144,14 +144,12 @@ docuseal templates retrieve 1001
 ```bash
 docuseal templates create-pdf --file contract.pdf --name "NDA"
 docuseal templates create-pdf --file form.pdf --folder-name Legal
-# ✓ Template created  #1003
 ```
 
 ### Create Template from DOCX
 
 ```bash
 docuseal templates create-docx --file template.docx --name "Contract"
-# ✓ Template created  #1004
 ```
 
 ### Create Template from HTML
@@ -162,7 +160,6 @@ docuseal templates create-html --html "<p>Hello {{name}}</p>" --name "Simple"
 
 # From file
 docuseal templates create-html --html-file template.html --name "Contract"
-# ✓ Template created  #1005
 ```
 
 ### Update Template
@@ -170,7 +167,6 @@ docuseal templates create-html --html-file template.html --name "Contract"
 ```bash
 docuseal templates update 1001 --name "NDA v2"
 docuseal templates update 1001 --folder-name Contracts
-# ✓ Template updated  #1001
 ```
 
 ### Clone Template
@@ -178,7 +174,6 @@ docuseal templates update 1001 --folder-name Contracts
 ```bash
 docuseal templates clone 1001
 docuseal templates clone 1001 --name "NDA Copy"
-# ✓ Template cloned  #1006
 ```
 
 ### Merge Templates
@@ -186,14 +181,12 @@ docuseal templates clone 1001 --name "NDA Copy"
 ```bash
 docuseal templates merge --template-ids 1001,1002
 docuseal templates merge --template-ids 1001,1002 --name "Combined"
-# ✓ Templates merged  #1007
 ```
 
 ### Archive Template
 
 ```bash
 docuseal templates archive 1001
-# ✓ Template archived  #1001
 ```
 
 ---
@@ -233,13 +226,6 @@ docuseal submissions create \
   --no-send-email \
   --expire-at "2025-12-31" \
   --order random
-```
-
-Output:
-
-```
-✓ Submission created  #502
-  john@acme.com  →  https://docuseal.com/s/pAMimKcyrLjqVt
 ```
 
 ### Create Submission from PDF
@@ -287,7 +273,6 @@ docuseal submissions documents 502 --merge
 
 ```bash
 docuseal submissions archive 502
-# ✓ Submission archived  #502
 ```
 
 ---
@@ -318,7 +303,6 @@ docuseal submitters update 201 --completed
 
 # Re-send signature request
 docuseal submitters update 201 --send-email
-# ✓ Submitter updated  #201
 ```
 
 ---
@@ -489,7 +473,7 @@ The CLI is **spec-driven with UX overrides**:
 
 - `openapi-spec.json` — source of truth for all endpoints and parameters
 - `src/generator.ts` — reads the spec, registers commander commands dynamically
-- `src/ux-overrides.ts` — hand-crafted UX layer: custom flags, examples, success messages
+- `src/ux-overrides.ts` — hand-crafted UX layer: custom flags, examples
 - `src/lib/` — HTTP client, config, output helpers
 - `src/commands/` — manually written commands (`configure`, raw HTTP)
 

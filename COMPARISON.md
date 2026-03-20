@@ -53,11 +53,9 @@ No major differences. Flag conventions are nearly identical.
 | Default format | JSON (2-space indent) | JSON (colorized, syntax-highlighted) |
 | Table mode | No | No |
 | JSON colorization | No | Yes (keys=blue, strings=gray, numbers=cyan) |
-| Success messages | Yes (`Template created  #1001`) | No (just raw JSON) |
 
 **Differences:**
 - Stripe colorizes JSON output, DocuSeal prints plain JSON
-- DocuSeal shows friendly success messages for mutating operations, Stripe always shows raw JSON
 
 ## Authentication
 
@@ -166,7 +164,6 @@ Stripe has significantly more special commands. DocuSeal focuses on CRUD operati
 - Same pagination approach (manual, no auto-pagination)
 
 **What differs from Stripe CLI:**
-- DocuSeal shows friendly success messages for mutations; Stripe always shows raw JSON
 - DocuSeal uses `archive`; Stripe uses `delete`
 - DocuSeal does not colorize JSON output
 - Stripe has more special commands (listen, trigger, logs, fixtures, samples)

@@ -79,7 +79,7 @@ docuseal-cli/
 - Each entry is partial — only override what needs customization
 - `customFlags` — additional flags not in spec (e.g. --file for local file upload with base64 encoding)
 - `examples` — array of example strings for --help output
-- `successMessage(result)` — function returning string for success output
+- All commands output raw JSON (success and error), like Stripe CLI
 
 ## generator.ts Rules
 
@@ -123,13 +123,6 @@ API errors output raw JSON from the server:
 {
   "error": "Not found"
 }
-```
-
-## Success Message Format
-
-```
-✓  Submission created  #502
-   john@acme.com → https://docuseal.com/s/pAMimKcyrLjqVt
 ```
 
 ---

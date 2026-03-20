@@ -8,9 +8,7 @@ export type CustomFlag = {
 
 export type CommandOverride = {
   customFlags?: Record<string, CustomFlag>
-  errorHint?: string
   examples?: string[]
-  successMessage?: (result: Record<string, unknown>) => string
 }
 
 export const overrides: Record<string, CommandOverride> = {
@@ -27,9 +25,7 @@ export const overrides: Record<string, CommandOverride> = {
   },
 
   'GET /templates/{id}': {
-    errorHint: 'Run `docuseal templates list` to see available template IDs.',
     examples: [
-      'docuseal templates retrieve 1001',
       'docuseal templates retrieve 1001',
     ],
   },
@@ -40,12 +36,10 @@ export const overrides: Record<string, CommandOverride> = {
       'docuseal templates update 1001 --folder-name Contracts',
       'docuseal templates update 1001 --no-archived',
     ],
-    successMessage: (r) => `Template updated  #${r.id}`,
   },
 
   'DELETE /templates/{id}': {
     examples: ['docuseal templates archive 1001'],
-    successMessage: (r) => `Template archived  #${r.id}`,
   },
 
   'POST /templates/pdf': {
@@ -61,7 +55,6 @@ export const overrides: Record<string, CommandOverride> = {
       'docuseal templates create-pdf --file contract.pdf --name "NDA"',
       'docuseal templates create-pdf --file form.pdf --folder-name Legal',
     ],
-    successMessage: (r) => `Template created  #${r.id}`,
   },
 
   'POST /templates/docx': {
@@ -76,7 +69,6 @@ export const overrides: Record<string, CommandOverride> = {
     examples: [
       'docuseal templates create-docx --file template.docx --name "Contract"',
     ],
-    successMessage: (r) => `Template created  #${r.id}`,
   },
 
   'POST /templates/html': {
@@ -91,7 +83,6 @@ export const overrides: Record<string, CommandOverride> = {
       'docuseal templates create-html --html "<p>{{name}}</p>" --name "Simple"',
       'docuseal templates create-html --html-file template.html --name "Contract"',
     ],
-    successMessage: (r) => `Template created  #${r.id}`,
   },
 
   'POST /templates/{id}/clone': {
@@ -99,7 +90,6 @@ export const overrides: Record<string, CommandOverride> = {
       'docuseal templates clone 1001',
       'docuseal templates clone 1001 --name "NDA Copy"',
     ],
-    successMessage: (r) => `Template cloned  #${r.id}`,
   },
 
   'POST /templates/merge': {
@@ -107,14 +97,12 @@ export const overrides: Record<string, CommandOverride> = {
       'docuseal templates merge --template-ids 1001,1002',
       'docuseal templates merge --template-ids 1001,1002 --name "Combined"',
     ],
-    successMessage: (r) => `Templates merged  #${r.id}`,
   },
 
   'PUT /templates/{id}/documents': {
     examples: [
       'docuseal templates update-documents 1001',
     ],
-    successMessage: (r) => `Template documents updated  #${r.id}`,
   },
 
   // ── SUBMISSIONS ──────────────────────────────────────────────────
@@ -129,16 +117,13 @@ export const overrides: Record<string, CommandOverride> = {
   },
 
   'GET /submissions/{id}': {
-    errorHint: 'Run `docuseal submissions list` to see available submission IDs.',
     examples: [
-      'docuseal submissions retrieve 502',
       'docuseal submissions retrieve 502',
     ],
   },
 
   'DELETE /submissions/{id}': {
     examples: ['docuseal submissions archive 502'],
-    successMessage: (r) => `Submission archived  #${r.id}`,
   },
 
   'POST /submissions': {
@@ -148,24 +133,12 @@ export const overrides: Record<string, CommandOverride> = {
       'docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com" -d "submitters[0][role]=Signer"',
       'docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com" --no-send-email',
     ],
-    successMessage: (result) => {
-      const submitters = result as any
-      if (Array.isArray(submitters) && submitters.length) {
-        return `Submission created  #${submitters[0].submission_id}\n` +
-          submitters.map((s: any) => `  ${s.email ?? s.role}  →  ${s.embed_src}`).join('\n')
-      }
-      return 'Submission created'
-    },
   },
 
   'POST /submissions/emails': {
     examples: [
       'docuseal submissions send-emails --template-id 1001 --emails a@b.com,c@d.com',
     ],
-    successMessage: (r) => {
-      const arr = r as any
-      return Array.isArray(arr) ? `Submissions created for ${arr.length} emails` : 'Submissions created'
-    },
   },
 
   'POST /submissions/pdf': {
@@ -226,9 +199,7 @@ export const overrides: Record<string, CommandOverride> = {
   },
 
   'GET /submitters/{id}': {
-    errorHint: 'Run `docuseal submitters list` to see available submitter IDs.',
     examples: [
-      'docuseal submitters retrieve 201',
       'docuseal submitters retrieve 201',
     ],
   },
@@ -238,6 +209,5 @@ export const overrides: Record<string, CommandOverride> = {
       'docuseal submitters update 201 --email new@acme.com',
       'docuseal submitters update 201 --completed',
     ],
-    successMessage: (r) => `Submitter updated  #${r.id}`,
   },
 }
