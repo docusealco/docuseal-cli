@@ -1,0 +1,532 @@
+<p align="center">
+  <a href="https://www.docuseal.com">
+    <img width="200" src="https://www.docuseal.com/logo.svg" alt="DocuSeal Logo">
+  </a>
+</p>
+
+<h1 align="center">DocuSeal CLI</h1>
+
+<p align="center">
+  Manage templates, submissions, and submitters from the terminal.
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@docuseal/cli"><img src="https://img.shields.io/npm/v/@docuseal/cli.svg" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/@docuseal/cli"><img src="https://img.shields.io/npm/dm/@docuseal/cli.svg" alt="npm downloads"></a>
+  <a href="https://github.com/docusealco/docuseal-cli/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@docuseal/cli.svg" alt="license"></a>
+</p>
+
+---
+
+## Quick Start
+
+```bash
+# Run directly with npx (no install needed)
+npx @docuseal/cli configure
+
+# Or install globally
+npm install -g @docuseal/cli
+docuseal configure
+```
+
+The `configure` command will prompt for your API token and server:
+
+```
+Server [com/eu/url] (default: com): com
+Enter your API token: xxxxxxxxxx
+✓ Saved to ~/.docuseal/config.yml
+```
+
+Get your API token from [DocuSeal Console](https://console.docuseal.com/api) or [DocuSeal EU Console](https://console.docuseal.eu/api).
+
+## Installation
+
+```bash
+npm install -g @docuseal/cli
+```
+
+**Requirements:** Node.js 18+
+
+## Usage
+
+```
+docuseal [COMMAND]
+
+TOPICS
+  templates    Manage templates
+  submissions  Manage submissions
+  submitters   Manage submitters
+
+COMMANDS
+  configure    Configure API key and server
+  whoami       Verify authentication
+```
+
+Every command supports `--help` for full usage details:
+
+```bash
+docuseal submissions create --help
+```
+
+---
+
+## Configuration
+
+### Interactive Setup
+
+```bash
+docuseal configure
+```
+
+### Non-Interactive Setup
+
+```bash
+docuseal configure --api-key YOUR_KEY --server com
+```
+
+### Environment Variables
+
+```bash
+export DOCUSEAL_API_KEY=your_key
+export DOCUSEAL_SERVER=com       # com, eu, or full URL
+```
+
+### Config File
+
+Stored at `~/.docuseal/config.yml`:
+
+```yaml
+apiKey: your_key
+server: https://api.docuseal.com
+```
+
+**Priority:** CLI flag > environment variable > config file.
+
+### Servers
+
+| Value | URL                        |
+|-------|----------------------------|
+| `com` | `https://api.docuseal.com` |
+| `eu`  | `https://api.docuseal.eu`  |
+| URL   | Your self-hosted instance  |
+
+### Verify Authentication
+
+```bash
+docuseal whoami
+# ✓ Authenticated
+#   server: https://api.docuseal.com
+```
+
+---
+
+## Templates
+
+### List Templates
+
+```bash
+docuseal templates list
+docuseal templates list --folder Legal --limit 50
+docuseal templates list --archived
+```
+
+Output:
+
+```
+┌──────┬──────────────────┬─────────────┬────────┬────────────┐
+│ id   │ name             │ folder_name │ source │ updated_at │
+├──────┼──────────────────┼─────────────┼────────┼────────────┤
+│ 1001 │ NDA              │ Legal       │ native │ 2h ago     │
+│ 1002 │ Offer Letter     │ HR          │ api    │ 5d ago     │
+└──────┴──────────────────┴─────────────┴────────┴────────────┘
+  2 results
+```
+
+### Get Template Details
+
+```bash
+docuseal templates get 1001
+docuseal templates get 1001 --json
+```
+
+### Create Template from PDF
+
+```bash
+docuseal templates create-pdf --file contract.pdf --name "NDA"
+docuseal templates create-pdf --file form.pdf --folder-name Legal
+# ✓ Template created  #1003
+```
+
+### Create Template from DOCX
+
+```bash
+docuseal templates create-docx --file template.docx --name "Contract"
+# ✓ Template created  #1004
+```
+
+### Create Template from HTML
+
+```bash
+# Inline HTML
+docuseal templates create-html --html "<p>Hello {{name}}</p>" --name "Simple"
+
+# From file
+docuseal templates create-html --html-file template.html --name "Contract"
+# ✓ Template created  #1005
+```
+
+### Update Template
+
+```bash
+docuseal templates update 1001 --name "NDA v2"
+docuseal templates update 1001 --folder-name Contracts
+# ✓ Template updated  #1001
+```
+
+### Clone Template
+
+```bash
+docuseal templates clone 1001
+docuseal templates clone 1001 --name "NDA Copy"
+# ✓ Template cloned  #1006
+```
+
+### Merge Templates
+
+```bash
+docuseal templates merge --template-ids 1001,1002
+docuseal templates merge --template-ids 1001,1002 --name "Combined"
+# ✓ Templates merged  #1007
+```
+
+### Archive Template
+
+```bash
+docuseal templates archive 1001
+# ✓ Template archived  #1001
+```
+
+---
+
+## Submissions
+
+### List Submissions
+
+```bash
+docuseal submissions list
+docuseal submissions list --status pending
+docuseal submissions list --template-id 1001 --limit 50
+```
+
+Output:
+
+```
+┌─────┬───────────┬────────────┬──────────────┐
+│ id  │ status    │ created_at │ completed_at │
+├─────┼───────────┼────────────┼──────────────┤
+│ 502 │ completed │ 3h ago     │ 1h ago       │
+│ 501 │ pending   │ 1d ago     │ —            │
+└─────┴───────────┴────────────┴──────────────┘
+  2 results
+```
+
+### Create Submission
+
+Send a template for signing:
+
+```bash
+# Single submitter
+docuseal submissions create \
+  --template-id 1001 \
+  --submitter email=john@acme.com
+
+# Multiple submitters with roles
+docuseal submissions create \
+  --template-id 1001 \
+  --submitter role=Signer,email=john@acme.com \
+  --submitter role=Witness,email=jane@acme.com
+
+# With options
+docuseal submissions create \
+  --template-id 1001 \
+  --submitter email=john@acme.com \
+  --send-email false \
+  --expire-at "2025-12-31" \
+  --order random
+```
+
+Output:
+
+```
+✓ Submission created  #502
+  john@acme.com  →  https://docuseal.com/s/pAMimKcyrLjqVt
+```
+
+### Create Submission from PDF
+
+Skip template creation — send a tagged PDF directly for signing:
+
+```bash
+docuseal submissions create-pdf \
+  --file document.pdf \
+  --submitter email=john@acme.com
+```
+
+### Create Submission from DOCX
+
+```bash
+docuseal submissions create-docx \
+  --file document.docx \
+  --submitter email=john@acme.com
+```
+
+### Send by Email
+
+Send a template to multiple email addresses at once:
+
+```bash
+docuseal submissions send-emails \
+  --template-id 1001 \
+  --emails john@acme.com,jane@acme.com
+```
+
+### Get Submission Details
+
+```bash
+docuseal submissions get 502
+docuseal submissions get 502 --json
+```
+
+### Get Submission Documents
+
+```bash
+docuseal submissions documents 502
+docuseal submissions documents 502 --merge
+```
+
+### Archive Submission
+
+```bash
+docuseal submissions archive 502
+# ✓ Submission archived  #502
+```
+
+---
+
+## Submitters
+
+### List Submitters
+
+```bash
+docuseal submitters list
+docuseal submitters list --submission-id 502
+```
+
+Output:
+
+```
+┌─────┬──────────────────┬──────────┬────────┬───────────┬────────────┐
+│ id  │ email            │ name     │ role   │ status    │ created_at │
+├─────┼──────────────────┼──────────┼────────┼───────────┼────────────┤
+│ 201 │ john@acme.com    │ John Doe │ Signer │ completed │ 3h ago     │
+│ 202 │ jane@acme.com    │ Jane Doe │ Viewer │ pending   │ 3h ago     │
+└─────┴──────────────────┴──────────┴────────┴───────────┴────────────┘
+  2 results
+```
+
+### Get Submitter Details
+
+```bash
+docuseal submitters get 201
+docuseal submitters get 201 --json
+```
+
+### Update Submitter
+
+```bash
+# Change email
+docuseal submitters update 201 --email new@acme.com
+
+# Mark as completed (auto-sign via API)
+docuseal submitters update 201 --completed true
+
+# Re-send signature request
+docuseal submitters update 201 --send-email true
+# ✓ Submitter updated  #201
+```
+
+---
+
+## Global Flags
+
+These flags work on every command:
+
+| Flag          | Short | Description                                   |
+|---------------|-------|-----------------------------------------------|
+| `--api-key`   |       | Override API key for this invocation           |
+| `--server`    |       | Server: `com`, `eu`, or full URL               |
+| `--json`      | `-j`  | Output raw JSON instead of formatted table     |
+| `--no-color`  |       | Disable colors (useful for CI/pipes)           |
+
+### JSON Output
+
+Pipe JSON output to `jq` or other tools:
+
+```bash
+# Get all template IDs
+docuseal templates list --json | jq '.data[].id'
+
+# Get submission status
+docuseal submissions get 502 --json | jq '.status'
+
+# Export submitters to CSV
+docuseal submitters list --json | jq -r '.data[] | [.id, .email, .status] | @csv'
+```
+
+### Override Server Per-Command
+
+```bash
+# Query a different server without changing config
+docuseal templates list --server eu
+docuseal templates list --server https://docuseal.mycompany.com
+```
+
+---
+
+## Scripting
+
+### Batch Send from a File
+
+```bash
+while IFS= read -r email; do
+  docuseal submissions create \
+    --template-id 1001 \
+    --submitter "email=$email" \
+    --send-email true \
+    --json
+done < emails.txt
+```
+
+### Check Submission Status
+
+```bash
+status=$(docuseal submissions get 502 --json | jq -r '.status')
+if [ "$status" = "completed" ]; then
+  echo "All signed!"
+fi
+```
+
+### Create Template and Send in One Flow
+
+```bash
+# Create template, capture ID
+template_id=$(docuseal templates create-pdf --file nda.pdf --name "NDA" --json | jq '.id')
+
+# Send for signing
+docuseal submissions create \
+  --template-id "$template_id" \
+  --submitter email=john@acme.com
+```
+
+### CI/CD Integration
+
+```bash
+# Use environment variables (no config file needed)
+export DOCUSEAL_API_KEY=$DOCUSEAL_TOKEN
+export DOCUSEAL_SERVER=com
+
+# Disable colors and spinners for clean CI logs
+docuseal submissions list --no-color --json
+```
+
+---
+
+## Development
+
+### Setup
+
+```bash
+git clone https://github.com/docusealco/docuseal-cli.git
+cd docuseal-cli
+npm install
+```
+
+### Run from Source
+
+```bash
+DOCUSEAL_API_KEY=your_key npm run dev -- templates list
+npm run dev -- --help
+```
+
+### Sync OpenAPI Spec
+
+When the DocuSeal API changes, update the local spec:
+
+```bash
+npm run sync-spec
+```
+
+This fetches `https://console.docuseal.com/openapi.yml` and saves it as `openapi-spec.json`. Simple changes (new query params, new endpoints) are picked up automatically — no code changes needed.
+
+### Install Locally
+
+```bash
+npm run build
+npm link
+```
+
+This creates a global `docuseal` command that points to your local source. Any code changes take effect after `npm run build`.
+
+To unlink:
+
+```bash
+npm unlink -g @docuseal/cli
+```
+
+### Build
+
+```bash
+npm run build
+```
+
+Bundles everything into `dist/index.js` (28KB) using esbuild. The OpenAPI spec is inlined into the bundle.
+
+### Publish
+
+```bash
+npm publish --access public
+```
+
+Build runs automatically via `prepublishOnly`.
+
+### Architecture
+
+The CLI is **spec-driven with UX overrides**:
+
+- `openapi-spec.json` — source of truth for all endpoints and parameters
+- `src/generator.ts` — reads the spec, builds oclif commands dynamically
+- `src/ux-overrides.ts` — hand-crafted UX layer: custom flags, table columns, error hints, examples
+- `src/lib/` — HTTP client, config, output helpers
+- `src/commands/` — manually written commands (`configure`, `whoami`)
+
+When adding support for a new API feature, you typically only need to edit `ux-overrides.ts`.
+
+---
+
+## API Documentation
+
+This CLI wraps the [DocuSeal API](https://www.docuseal.com/docs/api). All endpoints and parameters are auto-generated from the OpenAPI spec — every API parameter is available as a CLI flag.
+
+Run `--help` on any command to see all available flags:
+
+```bash
+docuseal templates create-pdf --help
+docuseal submissions create --help
+docuseal submitters update --help
+```
+
+---
+
+## License
+
+MIT
