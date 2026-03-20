@@ -326,7 +326,6 @@ These flags work on every command:
 |---------------|-----------------------------------------------|
 | `--api-key`   | Override API key for this invocation           |
 | `--server`    | Server: `com`, `eu`, or full URL               |
-| `--no-color`  | Disable colors (useful for CI/pipes)           |
 
 All commands output JSON by default. Pipe to `jq` or other tools:
 
@@ -392,8 +391,7 @@ docuseal submissions create \
 export DOCUSEAL_API_KEY=$DOCUSEAL_TOKEN
 export DOCUSEAL_SERVER=com
 
-# Disable colors and spinners for clean CI logs
-docuseal submissions list --no-color
+docuseal submissions list
 ```
 
 ---

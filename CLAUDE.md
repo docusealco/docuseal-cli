@@ -100,7 +100,6 @@ docuseal-cli/
 
 - `--api-key` — override API key for this invocation
 - `--server` — override server: `com`, `eu`, or full URL for self-hosted
-- `--no-color` — disable colors (for CI/pipes)
 
 ---
 
