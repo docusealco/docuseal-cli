@@ -37,7 +37,6 @@
   },
   "dependencies": {
     "@oclif/core": "^4.10.0",
-    "ora": "^9.3.0",
     "yaml": "^2.8.2"
   }
 }

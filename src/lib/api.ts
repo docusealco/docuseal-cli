@@ -1,4 +1,3 @@
-import ora from 'ora'
 import { loadConfig, type DocuSealConfig } from './config.ts'
 import { handleApiError } from './errors.ts'
 
@@ -21,8 +20,6 @@ export async function apiFetch<T = unknown>(path: string, opts: FetchOpts = {}):
     }
   }
 
-  const spinner = ora({ text: 'Loading...', color: 'gray' }).start()
-
   const res = await fetch(url.toString(), {
     method: opts.method ?? 'GET',
     headers: {
@@ -31,8 +28,6 @@ export async function apiFetch<T = unknown>(path: string, opts: FetchOpts = {}):
     },
     body: opts.body ? JSON.stringify(opts.body) : undefined,
   })
-
-  spinner.stop()
 
   if (!res.ok) return handleApiError(res, url.toString())
   return res.json() as Promise<T>
