@@ -1,42 +1,30 @@
-import { Command, Flags } from '@oclif/core'
+import { type Command } from 'commander'
 import { apiFetch } from '../lib/api.ts'
 import { loadConfig } from '../lib/config.ts'
 import { renderSuccess, renderError } from '../lib/output.ts'
 
-export default class WhoAmI extends Command {
-  static id = 'whoami'
-  static description = 'Verify authentication'
+export function registerWhoAmI(program: Command): void {
+  program
+    .command('whoami')
+    .description('Verify authentication')
+    .option('--api-key <value>', 'Override API key for this invocation')
+    .option('--server <value>', 'Server: com, eu, or full URL')
+    .addHelpText('after', '\nExamples:\n  $ docuseal whoami')
+    .action(async (opts) => {
+      const configOverrides: any = {}
+      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
+      if (opts.server) configOverrides.server = opts.server
 
-  static examples = [
-    'docuseal whoami',
-  ]
-
-  static flags = {
-    'api-key': Flags.string({
-      description: 'Override API key for this invocation',
-    }),
-    server: Flags.string({
-      description: 'Server: com, eu, or full URL',
-    }),
-  }
-
-  async run() {
-    const { flags } = await this.parse(WhoAmI)
-
-    const configOverrides: any = {}
-    if (flags['api-key']) configOverrides.apiKey = flags['api-key']
-    if (flags.server) configOverrides.server = flags.server
-
-    try {
-      const config = loadConfig(Object.keys(configOverrides).length > 0 ? configOverrides : undefined)
-      await apiFetch('/submissions', {
-        query: { limit: 1 },
-        configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-      })
-      renderSuccess('Authenticated', { server: config.server })
-    } catch {
-      renderError('Authentication failed')
-      process.exit(1)
-    }
-  }
+      try {
+        const config = loadConfig(Object.keys(configOverrides).length > 0 ? configOverrides : undefined)
+        await apiFetch('/submissions', {
+          query: { limit: 1 },
+          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
+        })
+        renderSuccess('Authenticated', { server: config.server })
+      } catch {
+        renderError('Authentication failed')
+        process.exit(1)
+      }
+    })
 }

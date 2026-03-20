@@ -1,4 +1,4 @@
-import { Command, Flags, Args } from '@oclif/core'
+import { Command, Option } from 'commander'
 import { readFileSync } from 'fs'
 import { createRequire } from 'module'
 import { overrides, type CommandOverride, type CustomFlag } from './ux-overrides.ts'
@@ -167,6 +167,10 @@ function flagToParamName(name: string): string {
   return name.replace(/-/g, '_')
 }
 
+function flagToCamel(name: string): string {
+  return name.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
+}
+
 // ── Build body params from spec requestBody ──────────────────────
 
 type BodyParam = {
@@ -199,48 +203,51 @@ function extractBodyParams(operation: any): BodyParam[] {
   return params
 }
 
-// ── Build command class ──────────────────────────────────────────
+// ── Register a single command ────────────────────────────────────
 
-function buildCommandClass(
+function registerCommand(
+  program: Command,
   method: string,
   path: string,
   operation: any,
   override: CommandOverride | undefined
-): typeof Command {
+): void {
   const { topic, command } = pathToCommandName(method, path)
   const pathParams = extractPathParams(path)
   const queryParams = (operation.parameters || []).filter((p: any) => p.in === 'query')
   const bodyParams = extractBodyParams(operation)
+  const customFlags = override?.customFlags || {}
+  const description = operation.summary || operation.description || ''
 
-  // Build oclif args for path parameters
-  const commandArgs: Record<string, any> = {}
+  // Find or create topic subcommand
+  let topicCmd = program.commands.find(c => c.name() === topic)
+  if (!topicCmd) {
+    topicCmd = program.command(topic).description(`Manage ${topic}`)
+  }
+
+  // Create the actual command
+  const cmd = topicCmd.command(command).description(description)
+
+  // Positional args for path params
   for (const param of pathParams) {
-    commandArgs[param] = Args.string({
-      description: `The ${param} of the resource`,
-      required: true,
-    })
+    cmd.argument(`<${param}>`, `The ${param} of the resource`)
   }
 
-  // Build oclif flags
-  const commandFlags: Record<string, any> = {
-    'api-key': Flags.string({
-      description: 'Override API key for this invocation',
-      env: 'DOCUSEAL_API_KEY',
-    }),
-    server: Flags.string({
-      description: 'Server: com, eu, or full URL',
-    }),
-    json: Flags.boolean({
-      char: 'j',
-      description: 'Output raw JSON (skip success message)',
-      hidden: true,
-    }),
-    data: Flags.string({
-      char: 'd',
-      description: 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")',
-      multiple: true,
-    }),
+  // Collect param names "softened" by custom flags with mapsTo
+  const softenedParams = new Set<string>()
+  for (const def of Object.values(customFlags)) {
+    if (def.mapsTo) {
+      const baseParam = def.mapsTo.split('[')[0].split('.')[0]
+      softenedParams.add(baseParam)
+    }
   }
+
+  // Global flags
+  cmd.option('--api-key <value>', 'Override API key for this invocation')
+  cmd.option('--server <value>', 'Server: com, eu, or full URL')
+
+  // -d / --data flag (repeatable)
+  cmd.option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val: string, prev: string[]) => prev.concat([val]), [] as string[])
 
   // Query params → flags
   for (const param of queryParams) {
@@ -249,203 +256,185 @@ function buildCommandClass(
     const schema = param.schema || {}
 
     if (schema.type === 'integer') {
-      commandFlags[flagName] = Flags.integer({
-        description: param.description || '',
-        required: param.required || false,
-      })
+      const opt = new Option(`--${flagName} <value>`, param.description || '').argParser(parseInt)
+      if (param.required) opt.makeOptionMandatory()
+      cmd.addOption(opt)
     } else if (schema.type === 'boolean') {
-      commandFlags[flagName] = Flags.string({
-        description: param.description || '',
-        options: ['true', 'false'],
-      })
+      const opt = new Option(`--${flagName} <value>`, param.description || '').choices(['true', 'false'])
+      cmd.addOption(opt)
+    } else if (schema.enum) {
+      const opt = new Option(`--${flagName} <value>`, param.description || '').choices(schema.enum)
+      if (param.required) opt.makeOptionMandatory()
+      cmd.addOption(opt)
     } else {
-      commandFlags[flagName] = Flags.string({
-        description: param.description || '',
-        required: param.required || false,
-      })
+      const opt = new Option(`--${flagName} <value>`, param.description || '')
+      if (param.required) opt.makeOptionMandatory()
+      cmd.addOption(opt)
     }
   }
 
   // Body params → flags (simple types only)
+  const addedFlags = new Set(queryParams.map((p: any) => paramToFlagName(p.name)))
   for (const param of bodyParams) {
     const flagName = paramToFlagName(param.name)
-    if (commandFlags[flagName]) continue // don't override existing query param flags
+    if (addedFlags.has(flagName)) continue
+    addedFlags.add(flagName)
+
+    const isSoftened = softenedParams.has(param.name)
 
     if (param.type === 'integer') {
-      commandFlags[flagName] = Flags.integer({
-        description: param.description || '',
-        required: param.required || false,
-      })
+      const opt = new Option(`--${flagName} <value>`, param.description || '').argParser(parseInt)
+      if (param.required && !isSoftened) opt.makeOptionMandatory()
+      cmd.addOption(opt)
     } else if (param.type === 'boolean') {
-      commandFlags[flagName] = Flags.string({
-        description: param.description || '',
-        options: ['true', 'false'],
-      })
+      const opt = new Option(`--${flagName} <value>`, param.description || '').choices(['true', 'false'])
+      cmd.addOption(opt)
+    } else if (param.enumValues) {
+      const opt = new Option(`--${flagName} <value>`, param.description || '').choices(param.enumValues)
+      if (param.required && !isSoftened) opt.makeOptionMandatory()
+      cmd.addOption(opt)
     } else {
-      commandFlags[flagName] = Flags.string({
-        description: param.description || '',
-        required: param.required || false,
-      })
+      const opt = new Option(`--${flagName} <value>`, param.description || '')
+      if (param.required && !isSoftened) opt.makeOptionMandatory()
+      cmd.addOption(opt)
     }
   }
 
   // Custom flags from overrides
-  const customFlags = override?.customFlags || {}
   for (const [name, def] of Object.entries(customFlags)) {
     if (def.type === 'boolean') {
-      commandFlags[name] = Flags.string({
-        description: def.description,
-        options: ['true', 'false'],
-      })
+      const opt = new Option(`--${name} <value>`, def.description).choices(['true', 'false'])
+      cmd.addOption(opt)
     } else if (def.type === 'integer') {
-      commandFlags[name] = Flags.integer({
-        description: def.description,
-        required: def.required || false,
-      })
+      const opt = new Option(`--${name} <value>`, def.description).argParser(parseInt)
+      if (def.required) opt.makeOptionMandatory()
+      cmd.addOption(opt)
     } else {
-      commandFlags[name] = Flags.string({
-        description: def.description,
-        required: def.required || false,
-        char: def.char as any,
-      })
-    }
-
-    // If custom flag maps to a body param, make the spec flag not required
-    if (def.mapsTo) {
-      const baseParam = def.mapsTo.split('[')[0].split('.')[0]
-      const baseFlagName = paramToFlagName(baseParam)
-      if (baseFlagName !== name && commandFlags[baseFlagName]) {
-        const existing = commandFlags[baseFlagName]
-        commandFlags[baseFlagName] = Flags.string({
-          ...existing,
-          required: false,
-        })
-      }
+      const opt = new Option(def.char ? `-${def.char}, --${name} <value>` : `--${name} <value>`, def.description)
+      if (def.required) opt.makeOptionMandatory()
+      cmd.addOption(opt)
     }
   }
 
-  // Build the Command class
-  const commandId = `${topic}:${command}`
-  const description = operation.summary || operation.description || ''
-  const examples = override?.examples || []
+  // Examples
+  const examples = override?.examples
+  if (examples && examples.length > 0) {
+    cmd.addHelpText('after', '\nExamples:\n' + examples.map(e => `  $ ${e}`).join('\n'))
+  }
 
-  const CmdClass = class extends Command {
-    static id = commandId
-    static description = description
-    static examples = examples
-    static flags = commandFlags
-    static args = commandArgs
-    static strict = false
+  // Allow unknown options (like oclif strict=false)
+  cmd.allowUnknownOption()
 
-    async run() {
-      const { args, flags } = await this.parse(CmdClass)
+  // Action handler
+  cmd.action(async (...actionArgs: any[]) => {
+    // Commander passes (arg1, arg2, ..., opts, cmd)
+    const args: Record<string, string> = {}
+    for (let i = 0; i < pathParams.length; i++) {
+      args[pathParams[i]] = actionArgs[i]
+    }
+    const opts = actionArgs[pathParams.length]
 
-      const configOverrides: any = {}
-      if (flags['api-key']) configOverrides.apiKey = flags['api-key']
-      if (flags.server) configOverrides.server = flags.server
+    const configOverrides: any = {}
+    if (opts.apiKey) configOverrides.apiKey = opts.apiKey
+    if (opts.server) configOverrides.server = opts.server
 
-      // Interpolate path params
-      let resolvedPath = path
-      for (const param of pathParams) {
-        resolvedPath = resolvedPath.replace(`{${param}}`, args[param])
-      }
+    // Interpolate path params
+    let resolvedPath = path
+    for (const param of pathParams) {
+      resolvedPath = resolvedPath.replace(`{${param}}`, args[param])
+    }
 
-      // Build query object
-      const query: Record<string, unknown> = {}
-      for (const param of queryParams) {
-        if (pathParams.includes(param.name)) continue
-        const flagName = paramToFlagName(param.name)
-        const val = flags[flagName]
-        if (val !== undefined) {
-          if (param.schema?.type === 'boolean') {
-            query[param.name] = val === 'true'
-          } else {
-            query[param.name] = val
-          }
+    // Build query object
+    const query: Record<string, unknown> = {}
+    for (const param of queryParams) {
+      if (pathParams.includes(param.name)) continue
+      const flagName = paramToFlagName(param.name)
+      const camelName = flagToCamel(flagName)
+      const val = opts[camelName]
+      if (val !== undefined) {
+        if (param.schema?.type === 'boolean') {
+          query[param.name] = val === 'true'
+        } else {
+          query[param.name] = val
         }
       }
+    }
 
-      // Build body object
-      const body: Record<string, unknown> = {}
-      let hasBody = false
+    // Build body object
+    const body: Record<string, unknown> = {}
+    let hasBody = false
 
-      for (const param of bodyParams) {
-        const flagName = paramToFlagName(param.name)
-        const val = flags[flagName]
-        if (val !== undefined) {
-          hasBody = true
-          if (param.type === 'boolean') {
-            body[param.name] = val === 'true'
-          } else {
-            body[param.name] = val
-          }
-        }
-      }
-
-      // Handle custom flags
-      for (const [name, def] of Object.entries(customFlags)) {
-        const val = flags[name]
-        if (val === undefined) continue
-
-        if (def.mapsTo === 'html' && name === 'html-file') {
-          hasBody = true
-          const content = readFileSync(val as string, 'utf8')
-          body.html = content
-        } else if (def.mapsTo?.includes('[0].file')) {
-          hasBody = true
-          const fileContent = readFileSync(val as string)
-          const base64 = Buffer.from(fileContent).toString('base64')
-          const fileName = (val as string).split('/').pop() || 'document'
-          body.documents = [{ name: fileName, file: `data:application/octet-stream;base64,${base64}` }]
-        } else if (def.mapsTo && !def.mapsTo.startsWith('__')) {
-          hasBody = true
-          body[def.mapsTo] = val
-        }
-      }
-
-      // Handle -d / --data flags (bracket notation)
-      const dataFlags = flags.data as string[] | undefined
-      if (dataFlags && dataFlags.length > 0) {
+    for (const param of bodyParams) {
+      const flagName = paramToFlagName(param.name)
+      const camelName = flagToCamel(flagName)
+      const val = opts[camelName]
+      if (val !== undefined) {
         hasBody = true
-        const parsed = parseDataFlags(dataFlags)
-        deepMerge(body as Record<string, any>, parsed)
-      }
-
-      try {
-        const result = await apiFetch(resolvedPath, {
-          method: method.toUpperCase(),
-          query: Object.keys(query).length > 0 ? query : undefined,
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-
-        if (override?.successMessage && !flags.json) {
-          renderSuccess(override.successMessage(result as Record<string, unknown>))
-          return
+        if (param.type === 'boolean') {
+          body[param.name] = val === 'true'
+        } else {
+          body[param.name] = val
         }
-
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderError(`${err.message} (${err.status})`, override?.errorHint)
-          process.exit(1)
-        }
-        throw err
       }
     }
-  }
 
-  // oclif needs these as static properties on the class
-  Object.defineProperty(CmdClass, 'name', { value: `${topic}_${command}`.replace(/-/g, '_') })
+    // Handle custom flags
+    for (const [name, def] of Object.entries(customFlags)) {
+      const camelName = flagToCamel(name)
+      const val = opts[camelName]
+      if (val === undefined) continue
 
-  return CmdClass
+      if (def.mapsTo === 'html' && name === 'html-file') {
+        hasBody = true
+        const content = readFileSync(val as string, 'utf8')
+        body.html = content
+      } else if (def.mapsTo?.includes('[0].file')) {
+        hasBody = true
+        const fileContent = readFileSync(val as string)
+        const base64 = Buffer.from(fileContent).toString('base64')
+        const fileName = (val as string).split('/').pop() || 'document'
+        body.documents = [{ name: fileName, file: `data:application/octet-stream;base64,${base64}` }]
+      } else if (def.mapsTo && !def.mapsTo.startsWith('__')) {
+        hasBody = true
+        body[def.mapsTo] = val
+      }
+    }
+
+    // Handle -d / --data flags (bracket notation)
+    const dataFlags = opts.data as string[] | undefined
+    if (dataFlags && dataFlags.length > 0) {
+      hasBody = true
+      const parsed = parseDataFlags(dataFlags)
+      deepMerge(body as Record<string, any>, parsed)
+    }
+
+    try {
+      const result = await apiFetch(resolvedPath, {
+        method: method.toUpperCase(),
+        query: Object.keys(query).length > 0 ? query : undefined,
+        body: hasBody ? body : undefined,
+        configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
+      })
+
+      if (override?.successMessage) {
+        renderSuccess(override.successMessage(result as Record<string, unknown>))
+        return
+      }
+
+      renderJson(result)
+    } catch (err) {
+      if (err instanceof DocuSealError) {
+        renderError(`${err.message} (${err.status})`, override?.errorHint)
+        process.exit(1)
+      }
+      throw err
+    }
+  })
 }
 
 // ── Register all commands ────────────────────────────────────────
 
-export function registerAllCommands(): Map<string, typeof Command> {
-  const commands = new Map<string, typeof Command>()
-
+export function registerAllCommands(program: Command): void {
   for (const [path, methods] of Object.entries(spec.paths) as any[]) {
     for (const [method, operation] of Object.entries(methods) as any[]) {
       if (!operation || typeof operation !== 'object' || !operation.summary) continue
@@ -453,13 +442,7 @@ export function registerAllCommands(): Map<string, typeof Command> {
       const key = `${method.toUpperCase()} ${path}`
       const override = overrides[key]
 
-      const CmdClass = buildCommandClass(method.toUpperCase(), path, operation, override)
-      const { topic, command } = pathToCommandName(method.toUpperCase(), path)
-      const id = `${topic}:${command}`
-
-      commands.set(id, CmdClass)
+      registerCommand(program, method.toUpperCase(), path, operation, override)
     }
   }
-
-  return commands
 }

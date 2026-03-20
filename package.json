@@ -16,11 +16,6 @@
     "dist",
     "bin"
   ],
-  "oclif": {
-    "bin": "docuseal",
-    "dirname": "docuseal",
-    "topicSeparator": " "
-  },
   "keywords": [
     "docuseal",
     "cli",
@@ -36,7 +31,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@oclif/core": "^4.10.0",
+    "commander": "^13.0.0",
     "yaml": "^2.8.2"
   }
 }
