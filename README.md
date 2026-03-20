@@ -130,23 +130,10 @@ docuseal templates list --folder Legal --limit 50
 docuseal templates list --archived
 ```
 
-Output:
-
-```
-┌──────┬──────────────────┬─────────────┬────────┬────────────┐
-│ id   │ name             │ folder_name │ source │ updated_at │
-├──────┼──────────────────┼─────────────┼────────┼────────────┤
-│ 1001 │ NDA              │ Legal       │ native │ 2h ago     │
-│ 1002 │ Offer Letter     │ HR          │ api    │ 5d ago     │
-└──────┴──────────────────┴─────────────┴────────┴────────────┘
-  2 results
-```
-
 ### Get Template Details
 
 ```bash
 docuseal templates get 1001
-docuseal templates get 1001 --json
 ```
 
 ### Create Template from PDF
@@ -218,18 +205,6 @@ docuseal submissions list --status pending
 docuseal submissions list --template-id 1001 --limit 50
 ```
 
-Output:
-
-```
-┌─────┬───────────┬────────────┬──────────────┐
-│ id  │ status    │ created_at │ completed_at │
-├─────┼───────────┼────────────┼──────────────┤
-│ 502 │ completed │ 3h ago     │ 1h ago       │
-│ 501 │ pending   │ 1d ago     │ —            │
-└─────┴───────────┴────────────┴──────────────┘
-  2 results
-```
-
 ### Create Submission
 
 Send a template for signing:
@@ -294,7 +269,6 @@ docuseal submissions send-emails \
 
 ```bash
 docuseal submissions get 502
-docuseal submissions get 502 --json
 ```
 
 ### Get Submission Documents
@@ -322,23 +296,10 @@ docuseal submitters list
 docuseal submitters list --submission-id 502
 ```
 
-Output:
-
-```
-┌─────┬──────────────────┬──────────┬────────┬───────────┬────────────┐
-│ id  │ email            │ name     │ role   │ status    │ created_at │
-├─────┼──────────────────┼──────────┼────────┼───────────┼────────────┤
-│ 201 │ john@acme.com    │ John Doe │ Signer │ completed │ 3h ago     │
-│ 202 │ jane@acme.com    │ Jane Doe │ Viewer │ pending   │ 3h ago     │
-└─────┴──────────────────┴──────────┴────────┴───────────┴────────────┘
-  2 results
-```
-
 ### Get Submitter Details
 
 ```bash
 docuseal submitters get 201
-docuseal submitters get 201 --json
 ```
 
 ### Update Submitter
@@ -361,26 +322,23 @@ docuseal submitters update 201 --send-email true
 
 These flags work on every command:
 
-| Flag          | Short | Description                                   |
-|---------------|-------|-----------------------------------------------|
-| `--api-key`   |       | Override API key for this invocation           |
-| `--server`    |       | Server: `com`, `eu`, or full URL               |
-| `--json`      | `-j`  | Output raw JSON instead of formatted table     |
-| `--no-color`  |       | Disable colors (useful for CI/pipes)           |
+| Flag          | Description                                   |
+|---------------|-----------------------------------------------|
+| `--api-key`   | Override API key for this invocation           |
+| `--server`    | Server: `com`, `eu`, or full URL               |
+| `--no-color`  | Disable colors (useful for CI/pipes)           |
 
-### JSON Output
-
-Pipe JSON output to `jq` or other tools:
+All commands output JSON by default. Pipe to `jq` or other tools:
 
 ```bash
 # Get all template IDs
-docuseal templates list --json | jq '.data[].id'
+docuseal templates list | jq '.data[].id'
 
 # Get submission status
-docuseal submissions get 502 --json | jq '.status'
+docuseal submissions get 502 | jq '.status'
 
 # Export submitters to CSV
-docuseal submitters list --json | jq -r '.data[] | [.id, .email, .status] | @csv'
+docuseal submitters list | jq -r '.data[] | [.id, .email, .status] | @csv'
 ```
 
 ### Override Server Per-Command
@@ -402,15 +360,14 @@ while IFS= read -r email; do
   docuseal submissions create \
     --template-id 1001 \
     --submitter "email=$email" \
-    --send-email true \
-    --json
+    --send-email true
 done < emails.txt
 ```
 
 ### Check Submission Status
 
 ```bash
-status=$(docuseal submissions get 502 --json | jq -r '.status')
+status=$(docuseal submissions get 502 | jq -r '.status')
 if [ "$status" = "completed" ]; then
   echo "All signed!"
 fi
@@ -420,7 +377,7 @@ fi
 
 ```bash
 # Create template, capture ID
-template_id=$(docuseal templates create-pdf --file nda.pdf --name "NDA" --json | jq '.id')
+template_id=$(docuseal templates create-pdf --file nda.pdf --name "NDA" | jq '.id')
 
 # Send for signing
 docuseal submissions create \
@@ -436,7 +393,7 @@ export DOCUSEAL_API_KEY=$DOCUSEAL_TOKEN
 export DOCUSEAL_SERVER=com
 
 # Disable colors and spinners for clean CI logs
-docuseal submissions list --no-color --json
+docuseal submissions list --no-color
 ```
 
 ---

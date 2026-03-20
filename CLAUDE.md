@@ -5,7 +5,7 @@
 This CLI is **spec-driven with UX overrides**.
 
 - `openapi-spec.json` — fetched from the live DocuSeal API, source of truth for all endpoints/params
-- `src/ux-overrides.ts` — hand-crafted UX layer: custom flags, table columns, error hints, examples
+- `src/ux-overrides.ts` — hand-crafted UX layer: custom flags, error hints, examples
 - `src/generator.ts` — merges spec + overrides → registers all oclif commands at runtime
 - `src/lib/` — HTTP client, config, output helpers
 
@@ -30,11 +30,11 @@ docuseal-cli/
   src/
     index.ts                 # oclif entrypoint
     generator.ts             # reads spec + overrides, registers commands
-    ux-overrides.ts          # UX layer: custom flags, columns, hints, examples
+    ux-overrides.ts          # UX layer: custom flags, hints, examples
     lib/
       api.ts                 # apiFetch() — all HTTP goes here
       config.ts              # ~/.docuseal/config.yml read/write
-      output.ts              # renderTable, renderJson, renderSuccess, renderError
+      output.ts              # renderJson, renderSuccess, renderError
       errors.ts              # DocuSealError, handleApiError
     commands/
       configure.ts           # special case — not generated, written manually
@@ -52,7 +52,7 @@ docuseal-cli/
 - Runtime: Node.js
 - CLI framework: @oclif/core
 - HTTP: native fetch
-- Output: chalk (colors), ora (spinners), cli-table3 (tables)
+- Output: chalk (colors), ora (spinners)
 - Config: yaml (read/write ~/.docuseal/config.yml)
 - Dev: tsx (TypeScript execution), esbuild (bundling)
 
@@ -70,7 +70,6 @@ docuseal-cli/
 
 ## lib/output.ts Rules
 
-- `renderTable(data, columns)` — cli-table3, dates as relative time, status values colored
 - `renderJson(data)` — JSON.stringify with 2-space indent
 - `renderSuccess(message, details?)` — chalk.green("✓") + message + optional key/value rows
 - `renderError(message, hint?)` — chalk.red("✗") + message + optional muted hint line
@@ -81,7 +80,6 @@ docuseal-cli/
 - Keyed by `"METHOD /path"` matching the OpenAPI spec exactly
 - Each entry is partial — only override what needs customization
 - `customFlags` — additional flags not in spec (e.g. --submitter that maps to body.submitters[])
-- `tableColumns` — which response fields to show in table output
 - `errorHint` — hint string shown below error message
 - `examples` — array of example strings for --help output
 - `successMessage(result)` — function returning string for success output
@@ -102,7 +100,6 @@ docuseal-cli/
 
 - `--api-key` — override API key for this invocation
 - `--server` — override server: `com`, `eu`, or full URL for self-hosted
-- `--json` / `-j` — output raw JSON instead of table
 - `--no-color` — disable colors (for CI/pipes)
 
 ---

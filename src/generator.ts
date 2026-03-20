@@ -4,7 +4,7 @@ import { createRequire } from 'module'
 import { overrides, type CommandOverride, type CustomFlag } from './ux-overrides.ts'
 import { apiFetch } from './lib/api.ts'
 import { DocuSealError } from './lib/errors.ts'
-import { renderTable, renderJson, renderSuccess, renderError } from './lib/output.ts'
+import { renderJson, renderSuccess, renderError } from './lib/output.ts'
 
 const require = createRequire(import.meta.url)
 const spec = require('../openapi-spec.json')
@@ -73,16 +73,6 @@ function pathToCommandName(method: string, path: string): CommandName {
 
   // fallback
   return { topic, command: segments.slice(1).join('-') }
-}
-
-// ── Auto columns from response data ──────────────────────────────
-
-function autoColumns(row: Record<string, unknown>): string[] {
-  if (!row) return ['id']
-  return Object.keys(row).filter(k => {
-    const v = row[k]
-    return v !== null && typeof v !== 'object'
-  }).slice(0, 6)
 }
 
 // ── Extract path parameters ──────────────────────────────────────
@@ -181,7 +171,8 @@ function buildCommandClass(
     }),
     json: Flags.boolean({
       char: 'j',
-      description: 'Output raw JSON instead of table',
+      description: 'Output raw JSON (skip success message)',
+      hidden: true,
     }),
   }
 
@@ -390,26 +381,8 @@ function buildCommandClass(
           configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
         })
 
-        if (flags.json) {
-          renderJson(result)
-          return
-        }
-
-        if (override?.successMessage) {
+        if (override?.successMessage && !flags.json) {
           renderSuccess(override.successMessage(result as Record<string, unknown>))
-          return
-        }
-
-        const data = result as any
-        if (data?.data && Array.isArray(data.data)) {
-          const columns = override?.tableColumns ?? autoColumns(data.data[0])
-          renderTable(data.data, columns)
-          return
-        }
-
-        if (Array.isArray(data)) {
-          const columns = override?.tableColumns ?? autoColumns(data[0])
-          renderTable(data, columns)
           return
         }
 

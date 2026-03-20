@@ -10,7 +10,6 @@ export type CustomFlag = {
 
 export type CommandOverride = {
   customFlags?: Record<string, CustomFlag>
-  tableColumns?: string[]
   errorHint?: string
   examples?: string[]
   successMessage?: (result: Record<string, unknown>) => string
@@ -30,12 +29,11 @@ export const overrides: Record<string, CommandOverride> = {
   // ── TEMPLATES ────────────────────────────────────────────────────
 
   'GET /templates': {
-    tableColumns: ['id', 'name', 'folder_name', 'source', 'updated_at'],
     examples: [
       'docuseal templates list',
       'docuseal templates list --folder Legal --limit 50',
       'docuseal templates list --archived',
-      'docuseal templates list --json | jq \'.data[].id\'',
+      'docuseal templates list | jq \'.data[].id\'',
     ],
   },
 
@@ -43,7 +41,7 @@ export const overrides: Record<string, CommandOverride> = {
     errorHint: 'Run `docuseal templates list` to see available template IDs.',
     examples: [
       'docuseal templates get 1001',
-      'docuseal templates get 1001 --json',
+      'docuseal templates get 1001',
     ],
   },
 
@@ -133,12 +131,11 @@ export const overrides: Record<string, CommandOverride> = {
   // ── SUBMISSIONS ──────────────────────────────────────────────────
 
   'GET /submissions': {
-    tableColumns: ['id', 'status', 'created_at', 'completed_at'],
     examples: [
       'docuseal submissions list',
       'docuseal submissions list --status pending',
       'docuseal submissions list --template-id 1001 --limit 50',
-      'docuseal submissions list --json | jq \'.data[].id\'',
+      'docuseal submissions list | jq \'.data[].id\'',
     ],
   },
 
@@ -146,7 +143,7 @@ export const overrides: Record<string, CommandOverride> = {
     errorHint: 'Run `docuseal submissions list` to see available submission IDs.',
     examples: [
       'docuseal submissions get 502',
-      'docuseal submissions get 502 --json',
+      'docuseal submissions get 502',
     ],
   },
 
@@ -265,7 +262,6 @@ export const overrides: Record<string, CommandOverride> = {
   // ── SUBMITTERS ───────────────────────────────────────────────────
 
   'GET /submitters': {
-    tableColumns: ['id', 'email', 'name', 'role', 'status', 'created_at'],
     examples: [
       'docuseal submitters list',
       'docuseal submitters list --submission-id 502',
@@ -276,7 +272,7 @@ export const overrides: Record<string, CommandOverride> = {
     errorHint: 'Run `docuseal submitters list` to see available submitter IDs.',
     examples: [
       'docuseal submitters get 201',
-      'docuseal submitters get 201 --json',
+      'docuseal submitters get 201',
     ],
   },
 
