@@ -5,11 +5,11 @@
 | | DocuSeal CLI | Stripe CLI |
 |---|---|---|
 | Language | TypeScript (Node.js) | Go |
-| Framework | @oclif/core | Cobra |
+| Framework | Commander | Cobra |
 | Spec-driven | Yes, OpenAPI spec at runtime | Yes, OpenAPI spec at build time |
 | Generated code | Dynamic (at startup) | Static (pre-generated `resources_cmds.go`) |
-| UX overrides | `ux-overrides.ts` (custom flags, hints, examples) | Hard-coded in Go files |
-| Bundle size | 26KB (esbuild) | ~25MB (Go binary) |
+| UX overrides | `ux-overrides.ts` (custom flags, examples) | Hard-coded in Go files |
+| Bundle size | ~24KB (esbuild) | ~25MB (Go binary) |
 | Distribution | npm (`npx @docuseal/cli`) | Homebrew, apt, scoop, Docker, npm |
 
 ## Command Naming
@@ -20,7 +20,7 @@
 | Topic separator | space | space |
 | Resource names | kebab-case (`templates`) | snake_case (`payment_intents`) |
 | List | `templates list` | `customers list` |
-| Get | `templates get 1001` | `customers retrieve cus_xxx` |
+| Retrieve | `templates retrieve 1001` | `customers retrieve cus_xxx` |
 | Create | `submissions create` | `customers create` |
 | Update | `templates update 1001` | `customers update cus_xxx` |
 | Delete | `templates archive 1001` | `customers delete cus_xxx` |
@@ -28,7 +28,6 @@
 | Raw HTTP | N/A | `stripe get /v1/...`, `stripe post /v1/...` |
 
 **Differences:**
-- DocuSeal uses `get` for retrieve, Stripe uses `retrieve`
 - DocuSeal uses `archive` for delete, Stripe uses `delete`
 - DocuSeal resource names are kebab-case, Stripe keeps API snake_case (`payment_intents`)
 - Stripe has raw HTTP commands (`get`, `post`, `delete`), DocuSeal does not
@@ -40,14 +39,15 @@
 | Convention | `--kebab-case` | `--kebab-case` |
 | Source | API snake_case -> kebab-case | API snake_case -> kebab-case |
 | Example | `--template-id`, `--folder-name` | `--unit-amount`, `--payment-method-types` |
-| Nested params | Custom flags (`--submitter role=X,email=Y`) | Dot notation (`-d "metadata[key]=value"`) |
-| Boolean flags | `--send-email true/false` (string) | `--live`, `--confirm` (real booleans) |
-| Repeatable | `--submitter ... --submitter ...` | `-d key=val -d key=val` |
-| ID argument | Positional (`templates get 1001`) | Positional (`customers retrieve cus_xxx`) |
+| Boolean flags | `--send-email` / `--no-send-email` | `--live`, `--confirm` |
+| Nested params | `-d "submitters[0][email]=john@acme.com"` | `-d "metadata[key]=value"` |
+| Repeatable | `-d key=val -d key=val` | `-d key=val -d key=val` |
+| ID argument | Positional (`templates retrieve 1001`) | Positional (`customers retrieve cus_xxx`) |
+| Short flags | `-d` (data), `-l` (limit), `-a` (after) | `-d` (data), `-l` (limit), `-a` (starting-after) |
 
 **Differences:**
-- DocuSeal booleans require explicit `true`/`false` value, Stripe uses real boolean flags
-- DocuSeal uses typed custom flags for nested data, Stripe uses generic `-d key=value`
+- Both use real boolean flags with `--no-` prefix for negation
+- Both use `-d` for bracket-notation nested params
 - Both convert API snake_case to CLI kebab-case
 
 ## Output
@@ -58,7 +58,6 @@
 | Table mode | No | No |
 | JSON colorization | No | Yes (keys=blue, strings=gray, numbers=cyan) |
 | Success messages | Yes (`Template created  #1001`) | No (just raw JSON) |
-| `--json` flag | Hidden (suppresses success message) | N/A (already JSON) |
 
 **Differences:**
 - Stripe colorizes JSON output, DocuSeal prints plain JSON
@@ -77,7 +76,7 @@
 | Env var | `DOCUSEAL_API_KEY` | `STRIPE_API_KEY` |
 | Priority | Flag > env var > config file | Flag > env var > config file |
 | Validation | Calls API to verify key | Calls API to verify key |
-| Verify command | `docuseal whoami` | `stripe config --list` |
+| Show config | `docuseal configure --list` | `stripe config --list` |
 | Multiple profiles | N/A | `--project-name` flag |
 | Key expiry | No | Yes (90 days for browser login) |
 
@@ -91,20 +90,19 @@
 
 | | DocuSeal CLI | Stripe CLI |
 |---|---|---|
-| Format | Custom formatted | Raw API JSON |
-| Hints | Yes, per-endpoint in ux-overrides | No (relies on API `doc_url`) |
+| Format | Raw API JSON | Raw API JSON |
 | Exit code | 1 on error | 1 on error |
 
 **DocuSeal error:**
-```
-✗  Not found (404)
-
-   Run `docuseal templates list` to see available IDs.
+```json
+{
+  "error": "Not found"
+}
 ```
 
 **Stripe error:**
-```
-Request failed, status=404, body={
+```json
+{
   "error": {
     "code": "resource_missing",
     "message": "No such customer: 'cus_xxx'",
@@ -114,9 +112,7 @@ Request failed, status=404, body={
 }
 ```
 
-**Differences:**
-- DocuSeal shows a clean one-liner with optional CLI-specific hint
-- Stripe dumps the full API error JSON with doc links
+Both dump the raw API error JSON.
 
 ## Global Flags
 
@@ -124,8 +120,8 @@ Request failed, status=404, body={
 |---|---|---|
 | API key override | `--api-key` | `--api-key` |
 | Server/env | `--server com/eu/url` | `--live` (test vs live) |
-| Help | `--help` (oclif built-in) | `--help` / `-h` |
-| Version | `--version` (oclif built-in) | `--version` / `-v` |
+| Help | `--help` / `-h` | `--help` / `-h` |
+| Version | `--version` / `-V` | `--version` / `-v` |
 | Color | N/A | `--color on/off/auto` |
 | Log level | N/A | `--log-level debug/info/warn/error` |
 | Config path | N/A | `--config <path>` |
@@ -139,8 +135,8 @@ Request failed, status=404, body={
 
 | | DocuSeal CLI | Stripe CLI |
 |---|---|---|
-| Limit flag | `--limit` (from spec) | `--limit` / `-l` |
-| Cursor flag | `--after` (from spec) | `--starting-after` / `-a` |
+| Limit flag | `--limit` / `-l` | `--limit` / `-l` |
+| Cursor flag | `--after` / `-a` | `--starting-after` / `-a` |
 | Auto-pagination | No | No |
 
 Both expose pagination as simple flags without automatic pagination loops.
@@ -164,17 +160,20 @@ Stripe has significantly more special commands. DocuSeal focuses on CRUD operati
 **What matches Stripe CLI:**
 - Spec-driven architecture with auto-generated commands
 - JSON output by default (no tables)
-- `topic action` command structure
+- `topic action` command structure with `retrieve` for fetching single resources
 - kebab-case flags derived from snake_case API params
+- Real boolean flags (`--flag` / `--no-flag`)
+- `-d` bracket notation for nested/array params
+- Short flags: `-l` (limit), `-a` (cursor), `-d` (data)
 - Positional ID arguments
+- Raw API JSON for errors
+- `configure --list` to show current config
 - Same config priority chain (flag > env > file)
 - Same pagination approach (manual, no auto-pagination)
 
 **What differs from Stripe CLI:**
 - DocuSeal shows friendly success messages for mutations; Stripe always shows raw JSON
-- DocuSeal has CLI-specific error hints; Stripe shows raw API errors
-- DocuSeal uses `get` / `archive`; Stripe uses `retrieve` / `delete`
+- DocuSeal uses `archive`; Stripe uses `delete`
 - DocuSeal does not colorize JSON output
 - Stripe has many more special commands (listen, trigger, logs, raw HTTP)
 - Stripe resource names keep API snake_case; DocuSeal uses kebab-case
-- DocuSeal booleans are string flags; Stripe uses real boolean flags

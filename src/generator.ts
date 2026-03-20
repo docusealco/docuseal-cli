@@ -4,7 +4,7 @@ import { createRequire } from 'module'
 import { overrides, type CommandOverride, type CustomFlag } from './ux-overrides.ts'
 import { apiFetch } from './lib/api.ts'
 import { DocuSealError } from './lib/errors.ts'
-import { renderJson, renderSuccess, renderError } from './lib/output.ts'
+import { renderJson, renderSuccess } from './lib/output.ts'
 
 const require = createRequire(import.meta.url)
 const spec = require('../openapi-spec.json')
@@ -106,9 +106,9 @@ function pathToCommandName(method: string, path: string): CommandName {
     return { topic, command: 'list' }
   }
 
-  // GET /templates/{id} → get
+  // GET /templates/{id} → retrieve
   if (method === 'GET' && segments.length === 2 && segments[1].startsWith('{')) {
-    return { topic, command: 'get' }
+    return { topic, command: 'retrieve' }
   }
 
   // PUT /templates/{id} → update
@@ -256,12 +256,14 @@ function registerCommand(
     const schema = param.schema || {}
 
     if (schema.type === 'integer') {
-      const opt = new Option(`--${flagName} <value>`, param.description || '').argParser(parseInt)
+      const SHORT: Record<string, string> = { limit: 'l', after: 'a' }
+      const flags = SHORT[flagName] ? `-${SHORT[flagName]}, --${flagName} <value>` : `--${flagName} <value>`
+      const opt = new Option(flags, param.description || '').argParser(parseInt)
       if (param.required) opt.makeOptionMandatory()
       cmd.addOption(opt)
     } else if (schema.type === 'boolean') {
-      const opt = new Option(`--${flagName} <value>`, param.description || '').choices(['true', 'false'])
-      cmd.addOption(opt)
+      cmd.option(`--${flagName}`, param.description || '')
+      cmd.option(`--no-${flagName}`, '')
     } else if (schema.enum) {
       const opt = new Option(`--${flagName} <value>`, param.description || '').choices(schema.enum)
       if (param.required) opt.makeOptionMandatory()
@@ -287,8 +289,8 @@ function registerCommand(
       if (param.required && !isSoftened) opt.makeOptionMandatory()
       cmd.addOption(opt)
     } else if (param.type === 'boolean') {
-      const opt = new Option(`--${flagName} <value>`, param.description || '').choices(['true', 'false'])
-      cmd.addOption(opt)
+      cmd.option(`--${flagName}`, param.description || '')
+      cmd.option(`--no-${flagName}`, '')
     } else if (param.enumValues) {
       const opt = new Option(`--${flagName} <value>`, param.description || '').choices(param.enumValues)
       if (param.required && !isSoftened) opt.makeOptionMandatory()
@@ -303,8 +305,8 @@ function registerCommand(
   // Custom flags from overrides
   for (const [name, def] of Object.entries(customFlags)) {
     if (def.type === 'boolean') {
-      const opt = new Option(`--${name} <value>`, def.description).choices(['true', 'false'])
-      cmd.addOption(opt)
+      cmd.option(`--${name}`, def.description)
+      cmd.option(`--no-${name}`, '')
     } else if (def.type === 'integer') {
       const opt = new Option(`--${name} <value>`, def.description).argParser(parseInt)
       if (def.required) opt.makeOptionMandatory()
@@ -352,11 +354,7 @@ function registerCommand(
       const camelName = flagToCamel(flagName)
       const val = opts[camelName]
       if (val !== undefined) {
-        if (param.schema?.type === 'boolean') {
-          query[param.name] = val === 'true'
-        } else {
-          query[param.name] = val
-        }
+        query[param.name] = val
       }
     }
 
@@ -370,11 +368,7 @@ function registerCommand(
       const val = opts[camelName]
       if (val !== undefined) {
         hasBody = true
-        if (param.type === 'boolean') {
-          body[param.name] = val === 'true'
-        } else {
-          body[param.name] = val
-        }
+        body[param.name] = val
       }
     }
 
@@ -424,7 +418,11 @@ function registerCommand(
       renderJson(result)
     } catch (err) {
       if (err instanceof DocuSealError) {
-        renderError(`${err.message} (${err.status})`, override?.errorHint)
+        if (err.body) {
+          renderJson(err.body)
+        } else {
+          renderJson({ error: err.message, status: err.status })
+        }
         process.exit(1)
       }
       throw err

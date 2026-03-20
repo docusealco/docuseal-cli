@@ -1,7 +1,7 @@
 import { type Command } from 'commander'
 import { createInterface } from 'readline'
 import { apiFetch } from '../lib/api.ts'
-import { saveConfig, resolveServer } from '../lib/config.ts'
+import { loadConfig, saveConfig, resolveServer } from '../lib/config.ts'
 import { renderSuccess, renderError } from '../lib/output.ts'
 
 export function registerConfigure(program: Command): void {
@@ -10,8 +10,22 @@ export function registerConfigure(program: Command): void {
     .description('Configure API key and server')
     .option('--api-key <value>', 'API key to save')
     .option('--server <value>', 'Server: com, eu, or full URL (default: com)')
-    .addHelpText('after', '\nExamples:\n  $ docuseal configure\n  $ docuseal configure --api-key YOUR_KEY --server com')
+    .option('--list', 'Show current configuration and verify authentication')
+    .addHelpText('after', '\nExamples:\n  $ docuseal configure\n  $ docuseal configure --api-key YOUR_KEY --server com\n  $ docuseal configure --list')
     .action(async (opts) => {
+      if (opts.list) {
+        try {
+          const config = loadConfig()
+          const masked = config.apiKey.slice(0, 8) + '...' + config.apiKey.slice(-4)
+          console.log(`api_key: ${masked}`)
+          console.log(`server: ${config.server}`)
+        } catch (err: any) {
+          renderError(err.message)
+          process.exit(1)
+        }
+        return
+      }
+
       let apiKey = opts.apiKey
       let server = opts.server
 

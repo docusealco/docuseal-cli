@@ -29,8 +29,8 @@ export const overrides: Record<string, CommandOverride> = {
   'GET /templates/{id}': {
     errorHint: 'Run `docuseal templates list` to see available template IDs.',
     examples: [
-      'docuseal templates get 1001',
-      'docuseal templates get 1001',
+      'docuseal templates retrieve 1001',
+      'docuseal templates retrieve 1001',
     ],
   },
 
@@ -38,7 +38,7 @@ export const overrides: Record<string, CommandOverride> = {
     examples: [
       'docuseal templates update 1001 --name "NDA v2"',
       'docuseal templates update 1001 --folder-name Contracts',
-      'docuseal templates update 1001 --archived false',
+      'docuseal templates update 1001 --no-archived',
     ],
     successMessage: (r) => `Template updated  #${r.id}`,
   },
@@ -131,8 +131,8 @@ export const overrides: Record<string, CommandOverride> = {
   'GET /submissions/{id}': {
     errorHint: 'Run `docuseal submissions list` to see available submission IDs.',
     examples: [
-      'docuseal submissions get 502',
-      'docuseal submissions get 502',
+      'docuseal submissions retrieve 502',
+      'docuseal submissions retrieve 502',
     ],
   },
 
@@ -146,7 +146,7 @@ export const overrides: Record<string, CommandOverride> = {
       'docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com"',
       'docuseal submissions create --template-id 1001 -d "submitters[0][email]=a@b.com" -d "submitters[1][email]=c@d.com"',
       'docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com" -d "submitters[0][role]=Signer"',
-      'docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com" --send-email false',
+      'docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com" --no-send-email',
     ],
     successMessage: (result) => {
       const submitters = result as any
@@ -228,15 +228,15 @@ export const overrides: Record<string, CommandOverride> = {
   'GET /submitters/{id}': {
     errorHint: 'Run `docuseal submitters list` to see available submitter IDs.',
     examples: [
-      'docuseal submitters get 201',
-      'docuseal submitters get 201',
+      'docuseal submitters retrieve 201',
+      'docuseal submitters retrieve 201',
     ],
   },
 
   'PUT /submitters/{id}': {
     examples: [
       'docuseal submitters update 201 --email new@acme.com',
-      'docuseal submitters update 201 --completed true',
+      'docuseal submitters update 201 --completed',
     ],
     successMessage: (r) => `Submitter updated  #${r.id}`,
   },

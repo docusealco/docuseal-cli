@@ -2,7 +2,6 @@
 import { Command } from 'commander'
 import { registerAllCommands } from './generator.ts'
 import { registerConfigure } from './commands/configure.ts'
-import { registerWhoAmI } from './commands/whoami.ts'
 import { createRequire } from 'module'
 
 const require = createRequire(import.meta.url)
@@ -15,6 +14,5 @@ const program = new Command()
 
 registerAllCommands(program)
 registerConfigure(program)
-registerWhoAmI(program)
 
 program.parse()

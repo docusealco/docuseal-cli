@@ -2,7 +2,8 @@ export class DocuSealError extends Error {
   constructor(
     public status: number,
     message: string,
-    public url: string
+    public url: string,
+    public body?: unknown
   ) {
     super(message)
     this.name = 'DocuSealError'
@@ -11,9 +12,10 @@ export class DocuSealError extends Error {
 
 export async function handleApiError(res: Response, url: string): Promise<never> {
   let message = res.statusText
+  let body: unknown
   try {
-    const body = await res.json()
-    message = body.error || body.message || JSON.stringify(body)
+    body = await res.json()
+    message = (body as any).error || (body as any).message || res.statusText
   } catch {}
-  throw new DocuSealError(res.status, message, url)
+  throw new DocuSealError(res.status, message, url, body)
 }
