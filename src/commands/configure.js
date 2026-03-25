@@ -1,5 +1,5 @@
 import { createInterface } from 'readline'
-import { apiFetch } from '../lib/api.js'
+import { DocusealApi } from '@docuseal/api'
 import { loadConfig, saveConfig, resolveServer } from '../lib/config.js'
 import { renderSuccess, renderError } from '../lib/output.js'
 
@@ -47,10 +47,8 @@ export function registerConfigure(program) {
       const resolvedServer = resolveServer(server)
 
       try {
-        await apiFetch('/submissions', {
-          query: { limit: 1 },
-          configOverrides: { apiKey, server: resolvedServer },
-        })
+        const client = new DocusealApi({ key: apiKey, url: resolvedServer })
+        await client.listSubmissions({ limit: 1 })
       } catch {
         renderError('Invalid API key')
         process.exit(1)

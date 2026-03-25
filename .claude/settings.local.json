@@ -6,7 +6,9 @@
       "Bash(stripe customers list:*)",
       "Bash(node -e:*)",
       "Bash(node:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(npm info:*)",
+      "Bash(npm install:*)"
     ]
   }
 }

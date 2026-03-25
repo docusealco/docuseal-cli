@@ -1,7 +1,6 @@
 import { Option } from 'commander'
 import { readFileSync } from 'fs'
-import { apiFetch } from '../lib/api.js'
-import { DocuSealError } from '../lib/errors.js'
+import { createClient, onError } from '../lib/api.js'
 import { renderJson } from '../lib/output.js'
 import { parseDataFlags, deepMerge } from '../lib/data-flags.js'
 
@@ -25,10 +24,6 @@ export function registerTemplateCommands(program) {
     .addOption(new Option('--before <value>', 'The unique identifier of the template to end the list with. It allows you to receive only templates with id less than the specified value.').argParser(parseInt))
     .addHelpText('after', '\nExamples:\n  $ docuseal templates list\n  $ docuseal templates list --folder Legal --limit 50\n  $ docuseal templates list --archived\n  $ docuseal templates list | jq \'.data[].id\'')
     .action(async (opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
       const query = {}
       if (opts.q !== undefined) query['q'] = opts.q
       if (opts.slug !== undefined) query['slug'] = opts.slug
@@ -38,26 +33,9 @@ export function registerTemplateCommands(program) {
       if (opts.limit !== undefined) query['limit'] = opts.limit
       if (opts.after !== undefined) query['after'] = opts.after
       if (opts.before !== undefined) query['before'] = opts.before
+      if (opts.data.length > 0) Object.assign(query, parseDataFlags(opts.data))
 
-      const body = {}
-      let hasBody = false
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
-
-      try {
-        const result = await apiFetch('/templates', {
-          method: 'GET',
-          query: Object.keys(query).length > 0 ? query : undefined,
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).listTemplates(query).then(renderJson, onError)
     })
 
   topic
@@ -69,28 +47,7 @@ export function registerTemplateCommands(program) {
     .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', '\nExamples:\n  $ docuseal templates retrieve 1001')
     .action(async (id, opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
-      const body = {}
-      let hasBody = false
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
-
-      try {
-        const result = await apiFetch(`/templates/${id}`, {
-          method: 'GET',
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).getTemplate(id).then(renderJson, onError)
     })
 
   topic
@@ -106,31 +63,13 @@ export function registerTemplateCommands(program) {
     .option('--no-archived', '')
     .addHelpText('after', '\nExamples:\n  $ docuseal templates update 1001 --name "NDA v2"\n  $ docuseal templates update 1001 --folder-name Contracts\n  $ docuseal templates update 1001 --no-archived')
     .action(async (id, opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
       const body = {}
-      let hasBody = false
-      if (opts.name !== undefined) { hasBody = true; body['name'] = opts.name }
-      if (opts.folderName !== undefined) { hasBody = true; body['folder_name'] = opts.folderName }
-      if (opts.archived !== undefined) { hasBody = true; body['archived'] = opts.archived }
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+      if (opts.name !== undefined) body['name'] = opts.name
+      if (opts.folderName !== undefined) body['folder_name'] = opts.folderName
+      if (opts.archived !== undefined) body['archived'] = opts.archived
+      if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
-      try {
-        const result = await apiFetch(`/templates/${id}`, {
-          method: 'PUT',
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).updateTemplate(id, body).then(renderJson, onError)
     })
 
   topic
@@ -139,31 +78,9 @@ export function registerTemplateCommands(program) {
     .argument('<id>', 'The id of the resource')
     .option('--api-key <value>', 'Override API key for this invocation')
     .option('--server <value>', 'Server: com, eu, or full URL')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', '\nExamples:\n  $ docuseal templates archive 1001')
     .action(async (id, opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
-      const body = {}
-      let hasBody = false
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
-
-      try {
-        const result = await apiFetch(`/templates/${id}`, {
-          method: 'DELETE',
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).archiveTemplate(id).then(renderJson, onError)
     })
 
   topic
@@ -180,39 +97,20 @@ export function registerTemplateCommands(program) {
     .addOption(new Option('--file <value>', 'Path to local PDF file').makeOptionMandatory())
     .addHelpText('after', '\nExamples:\n  $ docuseal templates create-pdf --file contract.pdf --name "NDA"\n  $ docuseal templates create-pdf --file form.pdf --folder-name Legal')
     .action(async (opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
       const body = {}
-      let hasBody = false
-      if (opts.name !== undefined) { hasBody = true; body['name'] = opts.name }
-      if (opts.folderName !== undefined) { hasBody = true; body['folder_name'] = opts.folderName }
-      if (opts.externalId !== undefined) { hasBody = true; body['external_id'] = opts.externalId }
-      if (opts.sharedLink !== undefined) { hasBody = true; body['shared_link'] = opts.sharedLink }
+      if (opts.name !== undefined) body['name'] = opts.name
+      if (opts.folderName !== undefined) body['folder_name'] = opts.folderName
+      if (opts.externalId !== undefined) body['external_id'] = opts.externalId
+      if (opts.sharedLink !== undefined) body['shared_link'] = opts.sharedLink
       if (opts.file !== undefined) {
-        hasBody = true
         const fileContent = readFileSync(opts.file)
         const base64 = Buffer.from(fileContent).toString('base64')
         const fileName = opts.file.split('/').pop() || 'document'
         body.documents = [{ name: fileName, file: `data:application/octet-stream;base64,${base64}` }]
       }
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+      if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
-      try {
-        const result = await apiFetch('/templates/pdf', {
-          method: 'POST',
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).createTemplateFromPdf(body).then(renderJson, onError)
     })
 
   topic
@@ -229,39 +127,20 @@ export function registerTemplateCommands(program) {
     .addOption(new Option('--file <value>', 'Path to local DOCX file').makeOptionMandatory())
     .addHelpText('after', '\nExamples:\n  $ docuseal templates create-docx --file template.docx --name "Contract"')
     .action(async (opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
       const body = {}
-      let hasBody = false
-      if (opts.name !== undefined) { hasBody = true; body['name'] = opts.name }
-      if (opts.externalId !== undefined) { hasBody = true; body['external_id'] = opts.externalId }
-      if (opts.folderName !== undefined) { hasBody = true; body['folder_name'] = opts.folderName }
-      if (opts.sharedLink !== undefined) { hasBody = true; body['shared_link'] = opts.sharedLink }
+      if (opts.name !== undefined) body['name'] = opts.name
+      if (opts.externalId !== undefined) body['external_id'] = opts.externalId
+      if (opts.folderName !== undefined) body['folder_name'] = opts.folderName
+      if (opts.sharedLink !== undefined) body['shared_link'] = opts.sharedLink
       if (opts.file !== undefined) {
-        hasBody = true
         const fileContent = readFileSync(opts.file)
         const base64 = Buffer.from(fileContent).toString('base64')
         const fileName = opts.file.split('/').pop() || 'document'
         body.documents = [{ name: fileName, file: `data:application/octet-stream;base64,${base64}` }]
       }
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+      if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
-      try {
-        const result = await apiFetch('/templates/docx', {
-          method: 'POST',
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).createTemplateFromDocx(body).then(renderJson, onError)
     })
 
   topic
@@ -282,37 +161,19 @@ export function registerTemplateCommands(program) {
     .addOption(new Option('--html-file <value>', 'Path to local HTML file (alternative to --html)'))
     .addHelpText('after', '\nExamples:\n  $ docuseal templates create-html --html "<p>{{name}}</p>" --name "Simple"\n  $ docuseal templates create-html --html-file template.html --name "Contract"')
     .action(async (opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
       const body = {}
-      let hasBody = false
-      if (opts.html !== undefined) { hasBody = true; body['html'] = opts.html }
-      if (opts.htmlHeader !== undefined) { hasBody = true; body['html_header'] = opts.htmlHeader }
-      if (opts.htmlFooter !== undefined) { hasBody = true; body['html_footer'] = opts.htmlFooter }
-      if (opts.name !== undefined) { hasBody = true; body['name'] = opts.name }
-      if (opts.size !== undefined) { hasBody = true; body['size'] = opts.size }
-      if (opts.externalId !== undefined) { hasBody = true; body['external_id'] = opts.externalId }
-      if (opts.folderName !== undefined) { hasBody = true; body['folder_name'] = opts.folderName }
-      if (opts.sharedLink !== undefined) { hasBody = true; body['shared_link'] = opts.sharedLink }
-      if (opts.htmlFile !== undefined) { hasBody = true; body.html = readFileSync(opts.htmlFile, 'utf8') }
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+      if (opts.html !== undefined) body['html'] = opts.html
+      if (opts.htmlHeader !== undefined) body['html_header'] = opts.htmlHeader
+      if (opts.htmlFooter !== undefined) body['html_footer'] = opts.htmlFooter
+      if (opts.name !== undefined) body['name'] = opts.name
+      if (opts.size !== undefined) body['size'] = opts.size
+      if (opts.externalId !== undefined) body['external_id'] = opts.externalId
+      if (opts.folderName !== undefined) body['folder_name'] = opts.folderName
+      if (opts.sharedLink !== undefined) body['shared_link'] = opts.sharedLink
+      if (opts.htmlFile !== undefined) body.html = readFileSync(opts.htmlFile, 'utf8')
+      if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
-      try {
-        const result = await apiFetch('/templates/html', {
-          method: 'POST',
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).createTemplateFromHtml(body).then(renderJson, onError)
     })
 
   topic
@@ -327,31 +188,13 @@ export function registerTemplateCommands(program) {
     .addOption(new Option('--external-id <value>', 'Your application-specific unique string key to identify this template within your app.'))
     .addHelpText('after', '\nExamples:\n  $ docuseal templates clone 1001\n  $ docuseal templates clone 1001 --name "NDA Copy"')
     .action(async (id, opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
       const body = {}
-      let hasBody = false
-      if (opts.name !== undefined) { hasBody = true; body['name'] = opts.name }
-      if (opts.folderName !== undefined) { hasBody = true; body['folder_name'] = opts.folderName }
-      if (opts.externalId !== undefined) { hasBody = true; body['external_id'] = opts.externalId }
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+      if (opts.name !== undefined) body['name'] = opts.name
+      if (opts.folderName !== undefined) body['folder_name'] = opts.folderName
+      if (opts.externalId !== undefined) body['external_id'] = opts.externalId
+      if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
-      try {
-        const result = await apiFetch(`/templates/${id}/clone`, {
-          method: 'POST',
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).cloneTemplate(id, body).then(renderJson, onError)
     })
 
   topic
@@ -367,32 +210,14 @@ export function registerTemplateCommands(program) {
     .option('--no-shared-link', '')
     .addHelpText('after', '\nExamples:\n  $ docuseal templates merge --template-ids 1001,1002\n  $ docuseal templates merge --template-ids 1001,1002 --name "Combined"')
     .action(async (opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
       const body = {}
-      let hasBody = false
-      if (opts.name !== undefined) { hasBody = true; body['name'] = opts.name }
-      if (opts.folderName !== undefined) { hasBody = true; body['folder_name'] = opts.folderName }
-      if (opts.externalId !== undefined) { hasBody = true; body['external_id'] = opts.externalId }
-      if (opts.sharedLink !== undefined) { hasBody = true; body['shared_link'] = opts.sharedLink }
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+      if (opts.name !== undefined) body['name'] = opts.name
+      if (opts.folderName !== undefined) body['folder_name'] = opts.folderName
+      if (opts.externalId !== undefined) body['external_id'] = opts.externalId
+      if (opts.sharedLink !== undefined) body['shared_link'] = opts.sharedLink
+      if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
-      try {
-        const result = await apiFetch('/templates/merge', {
-          method: 'POST',
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).mergeTemplates(body).then(renderJson, onError)
     })
 
   topic
@@ -406,28 +231,10 @@ export function registerTemplateCommands(program) {
     .option('--no-merge', '')
     .addHelpText('after', '\nExamples:\n  $ docuseal templates update-documents 1001')
     .action(async (id, opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
       const body = {}
-      let hasBody = false
-      if (opts.merge !== undefined) { hasBody = true; body['merge'] = opts.merge }
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+      if (opts.merge !== undefined) body['merge'] = opts.merge
+      if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
-      try {
-        const result = await apiFetch(`/templates/${id}/documents`, {
-          method: 'PUT',
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).updateTemplateDocuments(id, body).then(renderJson, onError)
     })
 }

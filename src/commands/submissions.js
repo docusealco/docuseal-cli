@@ -1,7 +1,6 @@
 import { Option } from 'commander'
 import { readFileSync } from 'fs'
-import { apiFetch } from '../lib/api.js'
-import { DocuSealError } from '../lib/errors.js'
+import { createClient, onError } from '../lib/api.js'
 import { renderJson } from '../lib/output.js'
 import { parseDataFlags, deepMerge } from '../lib/data-flags.js'
 
@@ -26,10 +25,6 @@ export function registerSubmissionCommands(program) {
     .addOption(new Option('--before <value>', 'The unique identifier of the submission that marks the end of the list. It allows you to receive only submissions with an ID less than the specified value.').argParser(parseInt))
     .addHelpText('after', '\nExamples:\n  $ docuseal submissions list\n  $ docuseal submissions list --status pending\n  $ docuseal submissions list --template-id 1001 --limit 50\n  $ docuseal submissions list | jq \'.data[].id\'')
     .action(async (opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
       const query = {}
       if (opts.templateId !== undefined) query['template_id'] = opts.templateId
       if (opts.status !== undefined) query['status'] = opts.status
@@ -40,26 +35,9 @@ export function registerSubmissionCommands(program) {
       if (opts.limit !== undefined) query['limit'] = opts.limit
       if (opts.after !== undefined) query['after'] = opts.after
       if (opts.before !== undefined) query['before'] = opts.before
+      if (opts.data.length > 0) Object.assign(query, parseDataFlags(opts.data))
 
-      const body = {}
-      let hasBody = false
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
-
-      try {
-        const result = await apiFetch('/submissions', {
-          method: 'GET',
-          query: Object.keys(query).length > 0 ? query : undefined,
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).listSubmissions(query).then(renderJson, onError)
     })
 
   topic
@@ -71,28 +49,7 @@ export function registerSubmissionCommands(program) {
     .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', '\nExamples:\n  $ docuseal submissions retrieve 502')
     .action(async (id, opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
-      const body = {}
-      let hasBody = false
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
-
-      try {
-        const result = await apiFetch(`/submissions/${id}`, {
-          method: 'GET',
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).getSubmission(id).then(renderJson, onError)
     })
 
   topic
@@ -101,31 +58,9 @@ export function registerSubmissionCommands(program) {
     .argument('<id>', 'The id of the resource')
     .option('--api-key <value>', 'Override API key for this invocation')
     .option('--server <value>', 'Server: com, eu, or full URL')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', '\nExamples:\n  $ docuseal submissions archive 502')
     .action(async (id, opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
-      const body = {}
-      let hasBody = false
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
-
-      try {
-        const result = await apiFetch(`/submissions/${id}`, {
-          method: 'DELETE',
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).archiveSubmission(id).then(renderJson, onError)
     })
 
   topic
@@ -146,36 +81,18 @@ export function registerSubmissionCommands(program) {
     .addOption(new Option('--expire-at <value>', 'Specify the expiration date and time after which the submission becomes unavailable for signature.'))
     .addHelpText('after', '\nExamples:\n  $ docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com"\n  $ docuseal submissions create --template-id 1001 -d "submitters[0][email]=a@b.com" -d "submitters[1][email]=c@d.com"\n  $ docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com" -d "submitters[0][role]=Signer"\n  $ docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com" --no-send-email')
     .action(async (opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
       const body = {}
-      let hasBody = false
-      if (opts.templateId !== undefined) { hasBody = true; body['template_id'] = opts.templateId }
-      if (opts.sendEmail !== undefined) { hasBody = true; body['send_email'] = opts.sendEmail }
-      if (opts.sendSms !== undefined) { hasBody = true; body['send_sms'] = opts.sendSms }
-      if (opts.order !== undefined) { hasBody = true; body['order'] = opts.order }
-      if (opts.completedRedirectUrl !== undefined) { hasBody = true; body['completed_redirect_url'] = opts.completedRedirectUrl }
-      if (opts.bccCompleted !== undefined) { hasBody = true; body['bcc_completed'] = opts.bccCompleted }
-      if (opts.replyTo !== undefined) { hasBody = true; body['reply_to'] = opts.replyTo }
-      if (opts.expireAt !== undefined) { hasBody = true; body['expire_at'] = opts.expireAt }
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+      if (opts.templateId !== undefined) body['template_id'] = opts.templateId
+      if (opts.sendEmail !== undefined) body['send_email'] = opts.sendEmail
+      if (opts.sendSms !== undefined) body['send_sms'] = opts.sendSms
+      if (opts.order !== undefined) body['order'] = opts.order
+      if (opts.completedRedirectUrl !== undefined) body['completed_redirect_url'] = opts.completedRedirectUrl
+      if (opts.bccCompleted !== undefined) body['bcc_completed'] = opts.bccCompleted
+      if (opts.replyTo !== undefined) body['reply_to'] = opts.replyTo
+      if (opts.expireAt !== undefined) body['expire_at'] = opts.expireAt
+      if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
-      try {
-        const result = await apiFetch('/submissions', {
-          method: 'POST',
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).createSubmission(body).then(renderJson, onError)
     })
 
   topic
@@ -190,31 +107,13 @@ export function registerSubmissionCommands(program) {
     .option('--no-send-email', '')
     .addHelpText('after', '\nExamples:\n  $ docuseal submissions send-emails --template-id 1001 --emails a@b.com,c@d.com')
     .action(async (opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
       const body = {}
-      let hasBody = false
-      if (opts.templateId !== undefined) { hasBody = true; body['template_id'] = opts.templateId }
-      if (opts.emails !== undefined) { hasBody = true; body['emails'] = opts.emails }
-      if (opts.sendEmail !== undefined) { hasBody = true; body['send_email'] = opts.sendEmail }
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+      if (opts.templateId !== undefined) body['template_id'] = opts.templateId
+      if (opts.emails !== undefined) body['emails'] = opts.emails
+      if (opts.sendEmail !== undefined) body['send_email'] = opts.sendEmail
+      if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
-      try {
-        const result = await apiFetch('/submissions/emails', {
-          method: 'POST',
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).createSubmissionFromEmails(body).then(renderJson, onError)
     })
 
   topic
@@ -242,46 +141,27 @@ export function registerSubmissionCommands(program) {
     .addOption(new Option('--file <value>', 'Path to local PDF file').makeOptionMandatory())
     .addHelpText('after', '\nExamples:\n  $ docuseal submissions create-pdf --file doc.pdf -d "submitters[0][email]=john@acme.com"')
     .action(async (opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
       const body = {}
-      let hasBody = false
-      if (opts.name !== undefined) { hasBody = true; body['name'] = opts.name }
-      if (opts.sendEmail !== undefined) { hasBody = true; body['send_email'] = opts.sendEmail }
-      if (opts.sendSms !== undefined) { hasBody = true; body['send_sms'] = opts.sendSms }
-      if (opts.order !== undefined) { hasBody = true; body['order'] = opts.order }
-      if (opts.completedRedirectUrl !== undefined) { hasBody = true; body['completed_redirect_url'] = opts.completedRedirectUrl }
-      if (opts.bccCompleted !== undefined) { hasBody = true; body['bcc_completed'] = opts.bccCompleted }
-      if (opts.replyTo !== undefined) { hasBody = true; body['reply_to'] = opts.replyTo }
-      if (opts.expireAt !== undefined) { hasBody = true; body['expire_at'] = opts.expireAt }
-      if (opts.flatten !== undefined) { hasBody = true; body['flatten'] = opts.flatten }
-      if (opts.mergeDocuments !== undefined) { hasBody = true; body['merge_documents'] = opts.mergeDocuments }
-      if (opts.removeTags !== undefined) { hasBody = true; body['remove_tags'] = opts.removeTags }
+      if (opts.name !== undefined) body['name'] = opts.name
+      if (opts.sendEmail !== undefined) body['send_email'] = opts.sendEmail
+      if (opts.sendSms !== undefined) body['send_sms'] = opts.sendSms
+      if (opts.order !== undefined) body['order'] = opts.order
+      if (opts.completedRedirectUrl !== undefined) body['completed_redirect_url'] = opts.completedRedirectUrl
+      if (opts.bccCompleted !== undefined) body['bcc_completed'] = opts.bccCompleted
+      if (opts.replyTo !== undefined) body['reply_to'] = opts.replyTo
+      if (opts.expireAt !== undefined) body['expire_at'] = opts.expireAt
+      if (opts.flatten !== undefined) body['flatten'] = opts.flatten
+      if (opts.mergeDocuments !== undefined) body['merge_documents'] = opts.mergeDocuments
+      if (opts.removeTags !== undefined) body['remove_tags'] = opts.removeTags
       if (opts.file !== undefined) {
-        hasBody = true
         const fileContent = readFileSync(opts.file)
         const base64 = Buffer.from(fileContent).toString('base64')
         const fileName = opts.file.split('/').pop() || 'document'
         body.documents = [{ name: fileName, file: `data:application/octet-stream;base64,${base64}` }]
       }
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+      if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
-      try {
-        const result = await apiFetch('/submissions/pdf', {
-          method: 'POST',
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).createSubmissionFromPdf(body).then(renderJson, onError)
     })
 
   topic
@@ -307,45 +187,26 @@ export function registerSubmissionCommands(program) {
     .addOption(new Option('--file <value>', 'Path to local DOCX file').makeOptionMandatory())
     .addHelpText('after', '\nExamples:\n  $ docuseal submissions create-docx --file doc.docx -d "submitters[0][email]=john@acme.com"')
     .action(async (opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
       const body = {}
-      let hasBody = false
-      if (opts.name !== undefined) { hasBody = true; body['name'] = opts.name }
-      if (opts.sendEmail !== undefined) { hasBody = true; body['send_email'] = opts.sendEmail }
-      if (opts.sendSms !== undefined) { hasBody = true; body['send_sms'] = opts.sendSms }
-      if (opts.order !== undefined) { hasBody = true; body['order'] = opts.order }
-      if (opts.completedRedirectUrl !== undefined) { hasBody = true; body['completed_redirect_url'] = opts.completedRedirectUrl }
-      if (opts.bccCompleted !== undefined) { hasBody = true; body['bcc_completed'] = opts.bccCompleted }
-      if (opts.replyTo !== undefined) { hasBody = true; body['reply_to'] = opts.replyTo }
-      if (opts.expireAt !== undefined) { hasBody = true; body['expire_at'] = opts.expireAt }
-      if (opts.mergeDocuments !== undefined) { hasBody = true; body['merge_documents'] = opts.mergeDocuments }
-      if (opts.removeTags !== undefined) { hasBody = true; body['remove_tags'] = opts.removeTags }
+      if (opts.name !== undefined) body['name'] = opts.name
+      if (opts.sendEmail !== undefined) body['send_email'] = opts.sendEmail
+      if (opts.sendSms !== undefined) body['send_sms'] = opts.sendSms
+      if (opts.order !== undefined) body['order'] = opts.order
+      if (opts.completedRedirectUrl !== undefined) body['completed_redirect_url'] = opts.completedRedirectUrl
+      if (opts.bccCompleted !== undefined) body['bcc_completed'] = opts.bccCompleted
+      if (opts.replyTo !== undefined) body['reply_to'] = opts.replyTo
+      if (opts.expireAt !== undefined) body['expire_at'] = opts.expireAt
+      if (opts.mergeDocuments !== undefined) body['merge_documents'] = opts.mergeDocuments
+      if (opts.removeTags !== undefined) body['remove_tags'] = opts.removeTags
       if (opts.file !== undefined) {
-        hasBody = true
         const fileContent = readFileSync(opts.file)
         const base64 = Buffer.from(fileContent).toString('base64')
         const fileName = opts.file.split('/').pop() || 'document'
         body.documents = [{ name: fileName, file: `data:application/octet-stream;base64,${base64}` }]
       }
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+      if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
-      try {
-        const result = await apiFetch('/submissions/docx', {
-          method: 'POST',
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).createSubmissionFromDocx(body).then(renderJson, onError)
     })
 
   topic
@@ -367,37 +228,19 @@ export function registerSubmissionCommands(program) {
     .addOption(new Option('--html-file <value>', 'Path to local HTML file'))
     .addHelpText('after', '\nExamples:\n  $ docuseal submissions create-html --html "<p>{{name}}</p>" -d "submitters[0][email]=john@acme.com"')
     .action(async (opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
       const body = {}
-      let hasBody = false
-      if (opts.name !== undefined) { hasBody = true; body['name'] = opts.name }
-      if (opts.sendEmail !== undefined) { hasBody = true; body['send_email'] = opts.sendEmail }
-      if (opts.sendSms !== undefined) { hasBody = true; body['send_sms'] = opts.sendSms }
-      if (opts.order !== undefined) { hasBody = true; body['order'] = opts.order }
-      if (opts.completedRedirectUrl !== undefined) { hasBody = true; body['completed_redirect_url'] = opts.completedRedirectUrl }
-      if (opts.bccCompleted !== undefined) { hasBody = true; body['bcc_completed'] = opts.bccCompleted }
-      if (opts.replyTo !== undefined) { hasBody = true; body['reply_to'] = opts.replyTo }
-      if (opts.expireAt !== undefined) { hasBody = true; body['expire_at'] = opts.expireAt }
-      if (opts.htmlFile !== undefined) { hasBody = true; body.html = readFileSync(opts.htmlFile, 'utf8') }
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+      if (opts.name !== undefined) body['name'] = opts.name
+      if (opts.sendEmail !== undefined) body['send_email'] = opts.sendEmail
+      if (opts.sendSms !== undefined) body['send_sms'] = opts.sendSms
+      if (opts.order !== undefined) body['order'] = opts.order
+      if (opts.completedRedirectUrl !== undefined) body['completed_redirect_url'] = opts.completedRedirectUrl
+      if (opts.bccCompleted !== undefined) body['bcc_completed'] = opts.bccCompleted
+      if (opts.replyTo !== undefined) body['reply_to'] = opts.replyTo
+      if (opts.expireAt !== undefined) body['expire_at'] = opts.expireAt
+      if (opts.htmlFile !== undefined) body.html = readFileSync(opts.htmlFile, 'utf8')
+      if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
-      try {
-        const result = await apiFetch('/submissions/html', {
-          method: 'POST',
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).createSubmissionFromHtml(body).then(renderJson, onError)
     })
 
   topic
@@ -411,31 +254,10 @@ export function registerSubmissionCommands(program) {
     .option('--no-merge', '')
     .addHelpText('after', '\nExamples:\n  $ docuseal submissions documents 502\n  $ docuseal submissions documents 502 --merge')
     .action(async (id, opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
       const query = {}
       if (opts.merge !== undefined) query['merge'] = opts.merge
+      if (opts.data.length > 0) Object.assign(query, parseDataFlags(opts.data))
 
-      const body = {}
-      let hasBody = false
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
-
-      try {
-        const result = await apiFetch(`/submissions/${id}/documents`, {
-          method: 'GET',
-          query: Object.keys(query).length > 0 ? query : undefined,
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).getSubmissionDocuments(id, query).then(renderJson, onError)
     })
 }

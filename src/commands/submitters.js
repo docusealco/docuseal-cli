@@ -1,6 +1,5 @@
 import { Option } from 'commander'
-import { apiFetch } from '../lib/api.js'
-import { DocuSealError } from '../lib/errors.js'
+import { createClient, onError } from '../lib/api.js'
 import { renderJson } from '../lib/output.js'
 import { parseDataFlags, deepMerge } from '../lib/data-flags.js'
 
@@ -24,10 +23,6 @@ export function registerSubmitterCommands(program) {
     .addOption(new Option('--before <value>', 'The unique identifier of the submitter to end the list with. It allows you to receive only submitters with id less than the specified value.').argParser(parseInt))
     .addHelpText('after', '\nExamples:\n  $ docuseal submitters list\n  $ docuseal submitters list --submission-id 502')
     .action(async (opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
       const query = {}
       if (opts.submissionId !== undefined) query['submission_id'] = opts.submissionId
       if (opts.q !== undefined) query['q'] = opts.q
@@ -38,26 +33,9 @@ export function registerSubmitterCommands(program) {
       if (opts.limit !== undefined) query['limit'] = opts.limit
       if (opts.after !== undefined) query['after'] = opts.after
       if (opts.before !== undefined) query['before'] = opts.before
+      if (opts.data.length > 0) Object.assign(query, parseDataFlags(opts.data))
 
-      const body = {}
-      let hasBody = false
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
-
-      try {
-        const result = await apiFetch('/submitters', {
-          method: 'GET',
-          query: Object.keys(query).length > 0 ? query : undefined,
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).listSubmitters(query).then(renderJson, onError)
     })
 
   topic
@@ -66,31 +44,9 @@ export function registerSubmitterCommands(program) {
     .argument('<id>', 'The id of the resource')
     .option('--api-key <value>', 'Override API key for this invocation')
     .option('--server <value>', 'Server: com, eu, or full URL')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', '\nExamples:\n  $ docuseal submitters retrieve 201')
     .action(async (id, opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
-      const body = {}
-      let hasBody = false
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
-
-      try {
-        const result = await apiFetch(`/submitters/${id}`, {
-          method: 'GET',
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).getSubmitter(id).then(renderJson, onError)
     })
 
   topic
@@ -118,38 +74,20 @@ export function registerSubmitterCommands(program) {
     .option('--no-require-email-2fa', '')
     .addHelpText('after', '\nExamples:\n  $ docuseal submitters update 201 --email new@acme.com\n  $ docuseal submitters update 201 --completed')
     .action(async (id, opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
-
       const body = {}
-      let hasBody = false
-      if (opts.name !== undefined) { hasBody = true; body['name'] = opts.name }
-      if (opts.email !== undefined) { hasBody = true; body['email'] = opts.email }
-      if (opts.phone !== undefined) { hasBody = true; body['phone'] = opts.phone }
-      if (opts.externalId !== undefined) { hasBody = true; body['external_id'] = opts.externalId }
-      if (opts.sendEmail !== undefined) { hasBody = true; body['send_email'] = opts.sendEmail }
-      if (opts.sendSms !== undefined) { hasBody = true; body['send_sms'] = opts.sendSms }
-      if (opts.replyTo !== undefined) { hasBody = true; body['reply_to'] = opts.replyTo }
-      if (opts.completed !== undefined) { hasBody = true; body['completed'] = opts.completed }
-      if (opts.completedRedirectUrl !== undefined) { hasBody = true; body['completed_redirect_url'] = opts.completedRedirectUrl }
-      if (opts.requirePhone2fa !== undefined) { hasBody = true; body['require_phone_2fa'] = opts.requirePhone2fa }
-      if (opts.requireEmail2fa !== undefined) { hasBody = true; body['require_email_2fa'] = opts.requireEmail2fa }
-      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+      if (opts.name !== undefined) body['name'] = opts.name
+      if (opts.email !== undefined) body['email'] = opts.email
+      if (opts.phone !== undefined) body['phone'] = opts.phone
+      if (opts.externalId !== undefined) body['external_id'] = opts.externalId
+      if (opts.sendEmail !== undefined) body['send_email'] = opts.sendEmail
+      if (opts.sendSms !== undefined) body['send_sms'] = opts.sendSms
+      if (opts.replyTo !== undefined) body['reply_to'] = opts.replyTo
+      if (opts.completed !== undefined) body['completed'] = opts.completed
+      if (opts.completedRedirectUrl !== undefined) body['completed_redirect_url'] = opts.completedRedirectUrl
+      if (opts.requirePhone2fa !== undefined) body['require_phone_2fa'] = opts.requirePhone2fa
+      if (opts.requireEmail2fa !== undefined) body['require_email_2fa'] = opts.requireEmail2fa
+      if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
-      try {
-        const result = await apiFetch(`/submitters/${id}`, {
-          method: 'PUT',
-          body: hasBody ? body : undefined,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          renderJson(err.body || { error: err.message, status: err.status })
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).updateSubmitter(id, body).then(renderJson, onError)
     })
 }

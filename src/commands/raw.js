@@ -1,5 +1,4 @@
-import { apiFetch } from '../lib/api.js'
-import { DocuSealError } from '../lib/errors.js'
+import { createClient, onError } from '../lib/api.js'
 import { renderJson } from '../lib/output.js'
 
 function parseDataFlags(pairs) {
@@ -22,31 +21,9 @@ function registerRawCommand(program, name, method) {
     .option('-d, --data <value>', 'Set body parameters (e.g. -d "name=NDA")', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', `\nExamples:\n  $ docuseal ${name} /templates\n  $ docuseal ${name} /templates/1`)
     .action(async (path, opts) => {
-      const configOverrides = {}
-      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
-      if (opts.server) configOverrides.server = opts.server
+      const data = opts.data.length > 0 ? parseDataFlags(opts.data) : undefined
 
-      const dataFlags = opts.data
-      const body = dataFlags.length > 0 ? parseDataFlags(dataFlags) : undefined
-
-      try {
-        const result = await apiFetch(path, {
-          method,
-          body,
-          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
-        })
-        renderJson(result)
-      } catch (err) {
-        if (err instanceof DocuSealError) {
-          if (err.body) {
-            renderJson(err.body)
-          } else {
-            renderJson({ error: err.message, status: err.status })
-          }
-          process.exit(1)
-        }
-        throw err
-      }
+      createClient(opts).http[method.toLowerCase()](path, data).then(renderJson, onError)
     })
 }
 
