@@ -305,9 +305,6 @@ function registerCommand(program, method, path, operation, override) {
     cmd.addHelpText('after', '\nExamples:\n' + examples.map(e => `  $ ${e}`).join('\n'))
   }
 
-  // Allow unknown options (like oclif strict=false)
-  cmd.allowUnknownOption()
-
   // Action handler
   cmd.action(async (...actionArgs) => {
     // Commander passes (arg1, arg2, ..., opts, cmd)

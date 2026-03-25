@@ -1,10 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run build:*)",
-      "Bash(npm run dev:*)",
-      "Bash(npm prune:*)",
-      "Bash(npm run sync-spec:*)"
+      "Bash(npx stripe:*)",
+      "Bash(brew list:*)",
+      "Bash(stripe customers list:*)"
     ]
   }
 }
