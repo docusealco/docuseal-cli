@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "node src/index.js",
     "build": "esbuild src/index.js --bundle --outfile=dist/index.js --platform=node --format=esm --packages=external",
+    "test": "node --test tests/",
     "prepublishOnly": "npm run build"
   },
   "files": [
