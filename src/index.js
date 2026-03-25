@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
-import { registerAllCommands } from './generator.ts'
-import { registerConfigure } from './commands/configure.ts'
-import { registerRawCommands } from './commands/raw.ts'
+import { registerAllCommands } from './generator.js'
+import { registerConfigure } from './commands/configure.js'
+import { registerRawCommands } from './commands/raw.js'
 import { createRequire } from 'module'
 
 const require = createRequire(import.meta.url)

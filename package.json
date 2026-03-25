@@ -7,10 +7,10 @@
     "docuseal": "./bin/run.js"
   },
   "scripts": {
-    "dev": "tsx src/index.ts",
-    "build": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node --format=esm --packages=external",
+    "dev": "node src/index.js",
+    "build": "esbuild src/index.js --bundle --outfile=dist/index.js --platform=node --format=esm --packages=external",
     "prepublishOnly": "npm run build",
-    "sync-spec": "tsx scripts/sync-spec.ts"
+    "sync-spec": "node scripts/sync-spec.js"
   },
   "files": [
     "dist",
@@ -26,12 +26,9 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "esbuild": "^0.27.4",
-    "tsx": "^4.21.0",
-    "typescript": "^5"
+    "esbuild": "^0.27.4"
   },
   "dependencies": {
-    "commander": "^13.0.0",
-    "yaml": "^2.8.2"
+    "commander": "^13.0.0"
   }
 }

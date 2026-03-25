@@ -1,10 +1,9 @@
-import { type Command } from 'commander'
 import { createInterface } from 'readline'
-import { apiFetch } from '../lib/api.ts'
-import { loadConfig, saveConfig, resolveServer } from '../lib/config.ts'
-import { renderSuccess, renderError } from '../lib/output.ts'
+import { apiFetch } from '../lib/api.js'
+import { loadConfig, saveConfig, resolveServer } from '../lib/config.js'
+import { renderSuccess, renderError } from '../lib/output.js'
 
-export function registerConfigure(program: Command): void {
+export function registerConfigure(program) {
   program
     .command('configure')
     .description('Configure API key and server')
@@ -19,7 +18,7 @@ export function registerConfigure(program: Command): void {
           const masked = config.apiKey.slice(0, 8) + '...' + config.apiKey.slice(-4)
           console.log(`api_key: ${masked}`)
           console.log(`server: ${config.server}`)
-        } catch (err: any) {
+        } catch (err) {
           renderError(err.message)
           process.exit(1)
         }
@@ -32,7 +31,7 @@ export function registerConfigure(program: Command): void {
       if (!apiKey || !server) {
         const rl = createInterface({ input: process.stdin, output: process.stdout })
 
-        const ask = (q: string): Promise<string> =>
+        const ask = (q) =>
           new Promise(resolve => rl.question(q, resolve))
 
         if (!server) {

@@ -1,29 +1,23 @@
-import { parse, stringify } from 'yaml'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { homedir } from 'os'
 import { join } from 'path'
 
-export type DocuSealConfig = {
-  apiKey: string
-  server: string
-}
-
 const CONFIG_DIR = join(homedir(), '.docuseal')
-const CONFIG_FILE = join(CONFIG_DIR, 'config.yml')
+const CONFIG_FILE = join(CONFIG_DIR, 'config.json')
 
-const SERVER_MAP: Record<string, string> = {
+const SERVER_MAP = {
   com: 'https://api.docuseal.com',
   eu: 'https://api.docuseal.eu',
 }
 
-export function resolveServer(input: string): string {
+export function resolveServer(input) {
   return SERVER_MAP[input] ?? input
 }
 
-export function loadConfig(overrides?: Partial<DocuSealConfig>): DocuSealConfig {
-  let fileConfig: any = {}
+export function loadConfig(overrides) {
+  let fileConfig = {}
   if (existsSync(CONFIG_FILE)) {
-    fileConfig = parse(readFileSync(CONFIG_FILE, 'utf8')) || {}
+    fileConfig = JSON.parse(readFileSync(CONFIG_FILE, 'utf8'))
   }
 
   const apiKey =
@@ -47,7 +41,7 @@ export function loadConfig(overrides?: Partial<DocuSealConfig>): DocuSealConfig 
   return { apiKey, server }
 }
 
-export function saveConfig(config: DocuSealConfig): void {
+export function saveConfig(config) {
   if (!existsSync(CONFIG_DIR)) mkdirSync(CONFIG_DIR, { recursive: true })
-  writeFileSync(CONFIG_FILE, stringify(config))
+  writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) + '\n')
 }

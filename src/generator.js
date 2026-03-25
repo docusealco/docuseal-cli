@@ -1,18 +1,15 @@
 import { Command, Option } from 'commander'
 import { readFileSync } from 'fs'
-import { createRequire } from 'module'
-import { overrides, type CommandOverride, type CustomFlag } from './ux-overrides.ts'
-import { apiFetch } from './lib/api.ts'
-import { DocuSealError } from './lib/errors.ts'
-import { renderJson } from './lib/output.ts'
-
-const require = createRequire(import.meta.url)
-const spec = require('../openapi-spec.json')
+import { overrides } from './ux-overrides.js'
+import { apiFetch } from './lib/api.js'
+import { DocuSealError } from './lib/errors.js'
+import { renderJson } from './lib/output.js'
+import spec from '../openapi-spec.js'
 
 // ── Bracket notation parser (-d flag) ───────────────────────────
 
-function parseDataFlags(pairs: string[]): Record<string, unknown> {
-  const result: Record<string, unknown> = {}
+function parseDataFlags(pairs) {
+  const result = {}
 
   for (const pair of pairs) {
     const eqIdx = pair.indexOf('=')
@@ -22,7 +19,7 @@ function parseDataFlags(pairs: string[]): Record<string, unknown> {
     const value = pair.slice(eqIdx + 1)
 
     // Parse key into segments: "submitters[0][email]" → ["submitters", "0", "email"]
-    const segments: string[] = []
+    const segments = []
     const firstBracket = rawKey.indexOf('[')
     if (firstBracket === -1) {
       segments.push(rawKey)
@@ -35,7 +32,7 @@ function parseDataFlags(pairs: string[]): Record<string, unknown> {
     }
 
     // Build nested structure
-    let current: any = result
+    let current = result
     for (let i = 0; i < segments.length - 1; i++) {
       const seg = segments[i]
       const nextSeg = segments[i + 1]
@@ -61,7 +58,7 @@ function parseDataFlags(pairs: string[]): Record<string, unknown> {
   return result
 }
 
-function deepMerge(target: Record<string, any>, source: Record<string, any>): Record<string, any> {
+function deepMerge(target, source) {
   for (const key of Object.keys(source)) {
     if (Array.isArray(source[key]) && Array.isArray(target[key])) {
       // Merge arrays by index
@@ -86,15 +83,13 @@ function deepMerge(target: Record<string, any>, source: Record<string, any>): Re
 
 // ── Naming helpers ──────────────────────────────────────────────────
 
-type CommandName = { topic: string; command: string }
-
 // Explicit name overrides for endpoints that don't follow the default naming pattern
-const NAME_OVERRIDES: Record<string, CommandName> = {
+const NAME_OVERRIDES = {
   'POST /templates/merge': { topic: 'templates', command: 'merge' },
   'POST /submissions/emails': { topic: 'submissions', command: 'send-emails' },
 }
 
-function pathToCommandName(method: string, path: string): CommandName {
+function pathToCommandName(method, path) {
   const key = `${method} ${path}`
   if (NAME_OVERRIDES[key]) return NAME_OVERRIDES[key]
 
@@ -152,43 +147,35 @@ function pathToCommandName(method: string, path: string): CommandName {
 
 // ── Extract path parameters ──────────────────────────────────────
 
-function extractPathParams(path: string): string[] {
+function extractPathParams(path) {
   const matches = path.match(/\{(\w+)\}/g)
   return matches ? matches.map(m => m.slice(1, -1)) : []
 }
 
 // ── Convert param name to flag name ──────────────────────────────
 
-function paramToFlagName(name: string): string {
+function paramToFlagName(name) {
   return name.replace(/_/g, '-')
 }
 
-function flagToParamName(name: string): string {
+function flagToParamName(name) {
   return name.replace(/-/g, '_')
 }
 
-function flagToCamel(name: string): string {
+function flagToCamel(name) {
   return name.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
 }
 
 // ── Build body params from spec requestBody ──────────────────────
 
-type BodyParam = {
-  name: string
-  type: string
-  required: boolean
-  description: string
-  enumValues?: string[]
-}
-
-function extractBodyParams(operation: any): BodyParam[] {
+function extractBodyParams(operation) {
   const schema = operation.requestBody?.content?.['application/json']?.schema
   if (!schema?.properties) return []
 
   const required = schema.required || []
-  const params: BodyParam[] = []
+  const params = []
 
-  for (const [name, prop] of Object.entries(schema.properties) as any[]) {
+  for (const [name, prop] of Object.entries(schema.properties)) {
     // Skip complex types (arrays, objects) — use -d flag for these
     if (prop.type === 'array' || prop.type === 'object') continue
     params.push({
@@ -205,16 +192,10 @@ function extractBodyParams(operation: any): BodyParam[] {
 
 // ── Register a single command ────────────────────────────────────
 
-function registerCommand(
-  program: Command,
-  method: string,
-  path: string,
-  operation: any,
-  override: CommandOverride | undefined
-): void {
+function registerCommand(program, method, path, operation, override) {
   const { topic, command } = pathToCommandName(method, path)
   const pathParams = extractPathParams(path)
-  const queryParams = (operation.parameters || []).filter((p: any) => p.in === 'query')
+  const queryParams = (operation.parameters || []).filter((p) => p.in === 'query')
   const bodyParams = extractBodyParams(operation)
   const customFlags = override?.customFlags || {}
   const description = operation.summary || operation.description || ''
@@ -234,7 +215,7 @@ function registerCommand(
   }
 
   // Collect param names "softened" by custom flags with mapsTo
-  const softenedParams = new Set<string>()
+  const softenedParams = new Set()
   for (const def of Object.values(customFlags)) {
     if (def.mapsTo) {
       const baseParam = def.mapsTo.split('[')[0].split('.')[0]
@@ -247,7 +228,7 @@ function registerCommand(
   cmd.option('--server <value>', 'Server: com, eu, or full URL')
 
   // -d / --data flag (repeatable)
-  cmd.option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val: string, prev: string[]) => prev.concat([val]), [] as string[])
+  cmd.option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
 
   // Query params → flags
   for (const param of queryParams) {
@@ -256,7 +237,7 @@ function registerCommand(
     const schema = param.schema || {}
 
     if (schema.type === 'integer') {
-      const SHORT: Record<string, string> = { limit: 'l', after: 'a' }
+      const SHORT = { limit: 'l', after: 'a' }
       const flags = SHORT[flagName] ? `-${SHORT[flagName]}, --${flagName} <value>` : `--${flagName} <value>`
       const opt = new Option(flags, param.description || '').argParser(parseInt)
       if (param.required) opt.makeOptionMandatory()
@@ -276,7 +257,7 @@ function registerCommand(
   }
 
   // Body params → flags (simple types only)
-  const addedFlags = new Set(queryParams.map((p: any) => paramToFlagName(p.name)))
+  const addedFlags = new Set(queryParams.map((p) => paramToFlagName(p.name)))
   for (const param of bodyParams) {
     const flagName = paramToFlagName(param.name)
     if (addedFlags.has(flagName)) continue
@@ -328,15 +309,15 @@ function registerCommand(
   cmd.allowUnknownOption()
 
   // Action handler
-  cmd.action(async (...actionArgs: any[]) => {
+  cmd.action(async (...actionArgs) => {
     // Commander passes (arg1, arg2, ..., opts, cmd)
-    const args: Record<string, string> = {}
+    const args = {}
     for (let i = 0; i < pathParams.length; i++) {
       args[pathParams[i]] = actionArgs[i]
     }
     const opts = actionArgs[pathParams.length]
 
-    const configOverrides: any = {}
+    const configOverrides = {}
     if (opts.apiKey) configOverrides.apiKey = opts.apiKey
     if (opts.server) configOverrides.server = opts.server
 
@@ -347,7 +328,7 @@ function registerCommand(
     }
 
     // Build query object
-    const query: Record<string, unknown> = {}
+    const query = {}
     for (const param of queryParams) {
       if (pathParams.includes(param.name)) continue
       const flagName = paramToFlagName(param.name)
@@ -359,7 +340,7 @@ function registerCommand(
     }
 
     // Build body object
-    const body: Record<string, unknown> = {}
+    const body = {}
     let hasBody = false
 
     for (const param of bodyParams) {
@@ -380,13 +361,13 @@ function registerCommand(
 
       if (def.mapsTo === 'html' && name === 'html-file') {
         hasBody = true
-        const content = readFileSync(val as string, 'utf8')
+        const content = readFileSync(val, 'utf8')
         body.html = content
       } else if (def.mapsTo?.includes('[0].file')) {
         hasBody = true
-        const fileContent = readFileSync(val as string)
+        const fileContent = readFileSync(val)
         const base64 = Buffer.from(fileContent).toString('base64')
-        const fileName = (val as string).split('/').pop() || 'document'
+        const fileName = val.split('/').pop() || 'document'
         body.documents = [{ name: fileName, file: `data:application/octet-stream;base64,${base64}` }]
       } else if (def.mapsTo && !def.mapsTo.startsWith('__')) {
         hasBody = true
@@ -395,11 +376,11 @@ function registerCommand(
     }
 
     // Handle -d / --data flags (bracket notation)
-    const dataFlags = opts.data as string[] | undefined
+    const dataFlags = opts.data
     if (dataFlags && dataFlags.length > 0) {
       hasBody = true
       const parsed = parseDataFlags(dataFlags)
-      deepMerge(body as Record<string, any>, parsed)
+      deepMerge(body, parsed)
     }
 
     try {
@@ -427,9 +408,9 @@ function registerCommand(
 
 // ── Register all commands ────────────────────────────────────────
 
-export function registerAllCommands(program: Command): void {
-  for (const [path, methods] of Object.entries(spec.paths) as any[]) {
-    for (const [method, operation] of Object.entries(methods) as any[]) {
+export function registerAllCommands(program) {
+  for (const [path, methods] of Object.entries(spec.paths)) {
+    for (const [method, operation] of Object.entries(methods)) {
       if (!operation || typeof operation !== 'object' || !operation.summary) continue
 
       const key = `${method.toUpperCase()} ${path}`

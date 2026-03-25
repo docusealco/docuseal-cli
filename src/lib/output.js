@@ -1,8 +1,8 @@
-export function renderJson(data: unknown): void {
+export function renderJson(data) {
   console.log(JSON.stringify(data, null, 2))
 }
 
-export function renderSuccess(message: string, details?: Record<string, string>): void {
+export function renderSuccess(message, details) {
   console.log('✓ ' + message)
   if (details) {
     for (const [key, value] of Object.entries(details)) {
@@ -11,7 +11,7 @@ export function renderSuccess(message: string, details?: Record<string, string>)
   }
 }
 
-export function renderError(message: string, hint?: string): void {
+export function renderError(message, hint) {
   console.log('✗ ' + message)
   if (hint) console.log(`\n  ${hint}`)
 }

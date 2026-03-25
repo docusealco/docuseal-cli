@@ -1,17 +1,4 @@
-export type CustomFlag = {
-  type: 'string' | 'boolean' | 'integer'
-  description: string
-  required?: boolean
-  char?: string
-  mapsTo?: string
-}
-
-export type CommandOverride = {
-  customFlags?: Record<string, CustomFlag>
-  examples?: string[]
-}
-
-export const overrides: Record<string, CommandOverride> = {
+export const overrides = {
 
   // ── TEMPLATES ────────────────────────────────────────────────────
 

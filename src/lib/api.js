@@ -1,14 +1,7 @@
-import { loadConfig, type DocuSealConfig } from './config.ts'
-import { handleApiError } from './errors.ts'
+import { loadConfig } from './config.js'
+import { handleApiError } from './errors.js'
 
-type FetchOpts = {
-  method?: string
-  query?: Record<string, unknown>
-  body?: unknown
-  configOverrides?: Partial<DocuSealConfig>
-}
-
-export async function apiFetch<T = unknown>(path: string, opts: FetchOpts = {}): Promise<T> {
+export async function apiFetch(path, opts = {}) {
   const config = loadConfig(opts.configOverrides)
 
   const url = new URL(config.server + path)
@@ -30,5 +23,5 @@ export async function apiFetch<T = unknown>(path: string, opts: FetchOpts = {}):
   })
 
   if (!res.ok) return handleApiError(res, url.toString())
-  return res.json() as Promise<T>
+  return res.json()
 }
