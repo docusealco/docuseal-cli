@@ -2,19 +2,16 @@
 
 ## Architecture Overview
 
-This CLI is **spec-driven with UX overrides**.
+Static command files with explicit flags and action handlers. No runtime code generation.
 
-- `openapi-spec.json` — fetched from the live DocuSeal API, source of truth for all endpoints/params
-- `src/ux-overrides.ts` — hand-crafted UX layer: custom flags, examples
-- `src/generator.ts` — merges spec + overrides → registers commander commands at runtime
-- `src/lib/` — HTTP client, config, output helpers
+- `src/commands/templates.js` — all template commands (list, retrieve, update, archive, create-pdf, create-docx, create-html, clone, merge, update-documents)
+- `src/commands/submissions.js` — all submission commands (list, retrieve, archive, create, send-emails, create-pdf, create-docx, create-html, documents)
+- `src/commands/submitters.js` — all submitter commands (list, retrieve, update)
+- `src/commands/configure.js` — interactive config setup
+- `src/commands/raw.js` — raw HTTP commands (get, post, put, delete)
+- `src/lib/` — HTTP client, config, output helpers, data-flags parser
 
-When the DocuSeal API changes:
-1. Run `npm run sync-spec` → `openapi-spec.json` updates
-2. Simple changes (new query param, new endpoint) → CLI updates automatically
-3. Complex changes (new nested body param) → add a few lines to `ux-overrides.ts`
-
-Never edit generated command logic directly — change `ux-overrides.ts` or the generator instead.
+When the DocuSeal API changes, edit the command files directly.
 
 ---
 
@@ -22,87 +19,116 @@ Never edit generated command logic directly — change `ux-overrides.ts` or the 
 
 ```
 docuseal-cli/
-  openapi-spec.json          # auto-fetched, never edit manually
   bin/
     run.js                   # Node entrypoint for npm/npx
   dist/
     index.js                 # bundled output (esbuild)
   src/
-    index.ts                 # commander entrypoint
-    generator.ts             # reads spec + overrides, registers commands
-    ux-overrides.ts          # UX layer: custom flags, examples
-    lib/
-      api.ts                 # apiFetch() — all HTTP goes here
-      config.ts              # ~/.docuseal/config.yml read/write
-      output.ts              # renderJson, renderSuccess, renderError
-      errors.ts              # DocuSealError, handleApiError
+    index.js                 # commander entrypoint
     commands/
-      configure.ts           # configure command (interactive setup + --list)
-      raw.ts                 # raw HTTP commands (get, post, put, delete)
-  scripts/
-    sync-spec.ts             # fetches openapi.yml → saves as openapi-spec.json
+      templates.js           # template commands
+      submissions.js         # submission commands
+      submitters.js          # submitter commands
+      configure.js           # configure command (interactive setup + --list)
+      raw.js                 # raw HTTP commands (get, post, put, delete)
+    lib/
+      api.js                 # apiFetch() — all HTTP goes here
+      config.js              # ~/.docuseal/config.yml read/write
+      output.js              # renderJson
+      errors.js              # DocuSealError
+      data-flags.js          # parseDataFlags(), deepMerge()
   package.json
-  tsconfig.json
 ```
 
 ---
 
 ## Tech Stack
 
-- Runtime: Node.js
+- Runtime: Node.js (ESM)
 - CLI framework: commander
 - HTTP: native fetch
 - Config: yaml (read/write ~/.docuseal/config.yml)
-- Dev: tsx (TypeScript execution), esbuild (bundling)
+- Bundling: esbuild
 
 ---
 
-## lib/api.ts Rules
+## Command File Pattern
 
-- Single exported function: `apiFetch<T>(path, opts?): Promise<T>`
+Each command file exports a `register*Commands(program)` function that:
+1. Creates a topic command (`program.command('templates')`)
+2. Registers subcommands with explicit flags, examples, and action handlers
+3. Builds query/body from options, calls `apiFetch()`, renders JSON output
+
+```js
+export function registerTemplateCommands(program) {
+  const topic = program.command('templates').description('Manage templates')
+
+  topic
+    .command('list')
+    .option('--api-key <value>', '...')
+    .option('--server <value>', '...')
+    .option('-d, --data <value>', '...', (val, prev) => prev.concat([val]), [])
+    .addOption(new Option('-l, --limit <value>', '...').argParser(parseInt))
+    .addHelpText('after', '\nExamples:\n  $ docuseal templates list')
+    .action(async (opts) => { /* ... */ })
+}
+```
+
+Key conventions:
+- String params → `.addOption(new Option('--flag <value>', 'desc'))`
+- Integer params → `.argParser(parseInt)`
+- Boolean params → `--flag` / `--no-flag` pair
+- Enum params → `.choices([...])`
+- Required params → `.makeOptionMandatory()`
+- File upload commands (create-pdf, create-docx) → `--file` flag with `readFileSync` + base64 encoding
+- Complex/nested body params (submitters, documents, template_ids) → handled via `-d` bracket notation
+
+## Updating Commands from OpenAPI Spec
+
+Source: `https://console.docuseal.com/openapi.json`
+
+Mapping rules:
+- Resource group = first path segment after `/api/` (templates, submissions, submitters)
+- Command name from path: `GET /templates` → `list`, `GET /templates/{id}` → `retrieve`, `PUT` → `update`, `DELETE` → `archive`, `POST /templates/pdf` → `create-pdf`, `POST /submissions/emails` → `send-emails`
+- GET query params → explicit flags with `addOption`
+- Request body scalar params (string, integer, boolean) → explicit flags
+- Request body complex params (arrays, objects) → skip, users pass them via `-d` bracket notation
+- When a custom flag like `--file` maps to a complex body param (e.g. `documents`), that param's `makeOptionMandatory()` is removed
+- Path params like `{id}` → `.argument('<id>', '...')`
+- Param descriptions come from OpenAPI `description` field
+- `snake_case` body keys map to `--kebab-case` flags, converted back in the action handler
+
+---
+
+## lib/api.js Rules
+
+- Single exported function: `apiFetch(path, opts?)`
 - Always reads base URL + API key from `loadConfig()`
 - Builds query string from `opts.query`, skipping null/undefined values
 - Sets `X-Auth-Token` header
-- On non-2xx: calls `handleApiError(res, url)` which throws `DocuSealError` with the raw response body
+- On non-2xx: throws `DocuSealError` with the raw response body
 - Never use `fetch()` directly anywhere outside this file
 
-## lib/output.ts Rules
+## lib/output.js Rules
 
 - `renderJson(data)` — JSON.stringify with 2-space indent
-- `renderSuccess(message, details?)` — "✓" + message + optional key/value rows
-- `renderError(message, hint?)` — "✗" + message + optional hint line
-- Never use `console.log()` directly in generator or command files
+- Never use `console.log()` directly in command files
 
-## ux-overrides.ts Rules
+## lib/data-flags.js
 
-- Keyed by `"METHOD /path"` matching the OpenAPI spec exactly
-- Each entry is partial — only override what needs customization
-- `customFlags` — additional flags not in spec (e.g. --file for local file upload with base64 encoding)
-- `examples` — array of example strings for --help output
-- All commands output raw JSON (success and error), like Stripe CLI
-
-## generator.ts Rules
-
-- Iterates over all paths in openapi-spec.json
-- For each operation: merges spec params with ux-overrides for that path
-- Registers commander commands via fluent API (`program.command(topic).command(action)`)
-- Spec params → flags automatically (string/integer/boolean based on schema type)
-- Boolean params → real boolean flags (`--flag` / `--no-flag`)
-- Enum params → validated against allowed values via `.choices()`
-- Required params → `.makeOptionMandatory()`
-- Custom flags from overrides → added on top, take precedence for naming
-- `-d` / `--data` flag on every command — Stripe-style bracket notation for nested/array body params
-- `parseDataFlags()` parses bracket notation into nested objects/arrays, deep-merged into body
-- Short flags: `-l` (limit), `-a` (after), `-d` (data)
-- API errors → raw JSON output (like Stripe CLI)
+- `parseDataFlags(pairs)` — parses bracket notation (e.g. `submitters[0][email]=john@acme.com`) into nested objects/arrays
+- `deepMerge(target, source)` — recursively merges objects and arrays
+- Used by all command files for `-d` flag support
 
 ---
 
 ## Global Flags (on every command)
 
-- `-d` / `--data` — set body params with bracket notation, repeatable (e.g. `-d "submitters[0][email]=john@acme.com"`)
+- `-d` / `--data` — set body params with bracket notation, repeatable
 - `--api-key` — override API key for this invocation
 - `--server` — override server: `com`, `eu`, or full URL for self-hosted
+
+Short flags: `-l` (limit), `-a` (after), `-d` (data)
 
 ---
 
@@ -130,8 +156,7 @@ API errors output raw JSON from the server:
 ## Build & Publish
 
 ```bash
-npm run dev -- --help                # run locally from TS source (uses tsx)
-npm run sync-spec                    # update openapi-spec.json from live API
+npm run dev -- --help                # run locally
 npm run build                        # bundle to dist/index.js (esbuild)
 npm publish                          # publish to npm (runs build via prepublishOnly)
 ```

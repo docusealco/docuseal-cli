@@ -9,8 +9,7 @@
   "scripts": {
     "dev": "node src/index.js",
     "build": "esbuild src/index.js --bundle --outfile=dist/index.js --platform=node --format=esm --packages=external",
-    "prepublishOnly": "npm run build",
-    "sync-spec": "node scripts/sync-spec.js"
+    "prepublishOnly": "npm run build"
   },
   "files": [
     "dist",

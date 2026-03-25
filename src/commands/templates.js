@@ -1,0 +1,433 @@
+import { Option } from 'commander'
+import { readFileSync } from 'fs'
+import { apiFetch } from '../lib/api.js'
+import { DocuSealError } from '../lib/errors.js'
+import { renderJson } from '../lib/output.js'
+import { parseDataFlags, deepMerge } from '../lib/data-flags.js'
+
+export function registerTemplateCommands(program) {
+  const topic = program.command('templates').description('Manage templates')
+
+  topic
+    .command('list')
+    .description('List all templates')
+    .option('--api-key <value>', 'Override API key for this invocation')
+    .option('--server <value>', 'Server: com, eu, or full URL')
+    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
+    .addOption(new Option('--q <value>', 'Filter templates based on the name partial match.'))
+    .addOption(new Option('--slug <value>', 'Filter templates by unique slug.'))
+    .addOption(new Option('--external-id <value>', 'The unique applications-specific identifier provided for the template via API or Embedded template form builder. It allows you to receive only templates with your specified external id.'))
+    .addOption(new Option('--folder <value>', 'Filter templates by folder name.'))
+    .option('--archived', 'Get only archived templates instead of active ones.')
+    .option('--no-archived', '')
+    .addOption(new Option('-l, --limit <value>', 'The number of templates to return. Default value is 10. Maximum value is 100.').argParser(parseInt))
+    .addOption(new Option('-a, --after <value>', 'The unique identifier of the template to start the list from. It allows you to receive only templates with id greater than the specified value. Pass ID value from the `pagination.next` response to load the next batch of templates.').argParser(parseInt))
+    .addOption(new Option('--before <value>', 'The unique identifier of the template to end the list with. It allows you to receive only templates with id less than the specified value.').argParser(parseInt))
+    .addHelpText('after', '\nExamples:\n  $ docuseal templates list\n  $ docuseal templates list --folder Legal --limit 50\n  $ docuseal templates list --archived\n  $ docuseal templates list | jq \'.data[].id\'')
+    .action(async (opts) => {
+      const configOverrides = {}
+      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
+      if (opts.server) configOverrides.server = opts.server
+
+      const query = {}
+      if (opts.q !== undefined) query['q'] = opts.q
+      if (opts.slug !== undefined) query['slug'] = opts.slug
+      if (opts.externalId !== undefined) query['external_id'] = opts.externalId
+      if (opts.folder !== undefined) query['folder'] = opts.folder
+      if (opts.archived !== undefined) query['archived'] = opts.archived
+      if (opts.limit !== undefined) query['limit'] = opts.limit
+      if (opts.after !== undefined) query['after'] = opts.after
+      if (opts.before !== undefined) query['before'] = opts.before
+
+      const body = {}
+      let hasBody = false
+      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+
+      try {
+        const result = await apiFetch('/templates', {
+          method: 'GET',
+          query: Object.keys(query).length > 0 ? query : undefined,
+          body: hasBody ? body : undefined,
+          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
+        })
+        renderJson(result)
+      } catch (err) {
+        if (err instanceof DocuSealError) {
+          renderJson(err.body || { error: err.message, status: err.status })
+          process.exit(1)
+        }
+        throw err
+      }
+    })
+
+  topic
+    .command('retrieve')
+    .description('Get a template')
+    .argument('<id>', 'The id of the resource')
+    .option('--api-key <value>', 'Override API key for this invocation')
+    .option('--server <value>', 'Server: com, eu, or full URL')
+    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
+    .addHelpText('after', '\nExamples:\n  $ docuseal templates retrieve 1001')
+    .action(async (id, opts) => {
+      const configOverrides = {}
+      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
+      if (opts.server) configOverrides.server = opts.server
+
+      const body = {}
+      let hasBody = false
+      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+
+      try {
+        const result = await apiFetch(`/templates/${id}`, {
+          method: 'GET',
+          body: hasBody ? body : undefined,
+          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
+        })
+        renderJson(result)
+      } catch (err) {
+        if (err instanceof DocuSealError) {
+          renderJson(err.body || { error: err.message, status: err.status })
+          process.exit(1)
+        }
+        throw err
+      }
+    })
+
+  topic
+    .command('update')
+    .description('Update a template')
+    .argument('<id>', 'The id of the resource')
+    .option('--api-key <value>', 'Override API key for this invocation')
+    .option('--server <value>', 'Server: com, eu, or full URL')
+    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
+    .addOption(new Option('--name <value>', 'The name of the template'))
+    .addOption(new Option('--folder-name <value>', 'The folder\'s name to which the template should be moved.'))
+    .option('--archived', 'Set `false` to unarchive template.')
+    .option('--no-archived', '')
+    .addHelpText('after', '\nExamples:\n  $ docuseal templates update 1001 --name "NDA v2"\n  $ docuseal templates update 1001 --folder-name Contracts\n  $ docuseal templates update 1001 --no-archived')
+    .action(async (id, opts) => {
+      const configOverrides = {}
+      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
+      if (opts.server) configOverrides.server = opts.server
+
+      const body = {}
+      let hasBody = false
+      if (opts.name !== undefined) { hasBody = true; body['name'] = opts.name }
+      if (opts.folderName !== undefined) { hasBody = true; body['folder_name'] = opts.folderName }
+      if (opts.archived !== undefined) { hasBody = true; body['archived'] = opts.archived }
+      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+
+      try {
+        const result = await apiFetch(`/templates/${id}`, {
+          method: 'PUT',
+          body: hasBody ? body : undefined,
+          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
+        })
+        renderJson(result)
+      } catch (err) {
+        if (err instanceof DocuSealError) {
+          renderJson(err.body || { error: err.message, status: err.status })
+          process.exit(1)
+        }
+        throw err
+      }
+    })
+
+  topic
+    .command('archive')
+    .description('Archive a template')
+    .argument('<id>', 'The id of the resource')
+    .option('--api-key <value>', 'Override API key for this invocation')
+    .option('--server <value>', 'Server: com, eu, or full URL')
+    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
+    .addHelpText('after', '\nExamples:\n  $ docuseal templates archive 1001')
+    .action(async (id, opts) => {
+      const configOverrides = {}
+      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
+      if (opts.server) configOverrides.server = opts.server
+
+      const body = {}
+      let hasBody = false
+      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+
+      try {
+        const result = await apiFetch(`/templates/${id}`, {
+          method: 'DELETE',
+          body: hasBody ? body : undefined,
+          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
+        })
+        renderJson(result)
+      } catch (err) {
+        if (err instanceof DocuSealError) {
+          renderJson(err.body || { error: err.message, status: err.status })
+          process.exit(1)
+        }
+        throw err
+      }
+    })
+
+  topic
+    .command('create-pdf')
+    .description('Create a template from PDF')
+    .option('--api-key <value>', 'Override API key for this invocation')
+    .option('--server <value>', 'Server: com, eu, or full URL')
+    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
+    .addOption(new Option('--name <value>', 'Name of the template'))
+    .addOption(new Option('--folder-name <value>', 'The folder\'s name in which the template should be created.'))
+    .addOption(new Option('--external-id <value>', 'Your application-specific unique string key to identify this template within your app. Existing template with specified `external_id` will be updated with a new PDF.'))
+    .option('--shared-link', 'Set to `true` to make the template available via a shared link. This will allow anyone with the link to create a submission from this template.')
+    .option('--no-shared-link', '')
+    .addOption(new Option('--file <value>', 'Path to local PDF file').makeOptionMandatory())
+    .addHelpText('after', '\nExamples:\n  $ docuseal templates create-pdf --file contract.pdf --name "NDA"\n  $ docuseal templates create-pdf --file form.pdf --folder-name Legal')
+    .action(async (opts) => {
+      const configOverrides = {}
+      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
+      if (opts.server) configOverrides.server = opts.server
+
+      const body = {}
+      let hasBody = false
+      if (opts.name !== undefined) { hasBody = true; body['name'] = opts.name }
+      if (opts.folderName !== undefined) { hasBody = true; body['folder_name'] = opts.folderName }
+      if (opts.externalId !== undefined) { hasBody = true; body['external_id'] = opts.externalId }
+      if (opts.sharedLink !== undefined) { hasBody = true; body['shared_link'] = opts.sharedLink }
+      if (opts.file !== undefined) {
+        hasBody = true
+        const fileContent = readFileSync(opts.file)
+        const base64 = Buffer.from(fileContent).toString('base64')
+        const fileName = opts.file.split('/').pop() || 'document'
+        body.documents = [{ name: fileName, file: `data:application/octet-stream;base64,${base64}` }]
+      }
+      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+
+      try {
+        const result = await apiFetch('/templates/pdf', {
+          method: 'POST',
+          body: hasBody ? body : undefined,
+          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
+        })
+        renderJson(result)
+      } catch (err) {
+        if (err instanceof DocuSealError) {
+          renderJson(err.body || { error: err.message, status: err.status })
+          process.exit(1)
+        }
+        throw err
+      }
+    })
+
+  topic
+    .command('create-docx')
+    .description('Create a template from Word DOCX')
+    .option('--api-key <value>', 'Override API key for this invocation')
+    .option('--server <value>', 'Server: com, eu, or full URL')
+    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
+    .addOption(new Option('--name <value>', 'Name of the template'))
+    .addOption(new Option('--external-id <value>', 'Your application-specific unique string key to identify this template within your app. Existing template with specified `external_id` will be updated with a new document.'))
+    .addOption(new Option('--folder-name <value>', 'The folder\'s name in which the template should be created.'))
+    .option('--shared-link', 'Set to `true` to make the template available via a shared link. This will allow anyone with the link to create a submission from this template.')
+    .option('--no-shared-link', '')
+    .addOption(new Option('--file <value>', 'Path to local DOCX file').makeOptionMandatory())
+    .addHelpText('after', '\nExamples:\n  $ docuseal templates create-docx --file template.docx --name "Contract"')
+    .action(async (opts) => {
+      const configOverrides = {}
+      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
+      if (opts.server) configOverrides.server = opts.server
+
+      const body = {}
+      let hasBody = false
+      if (opts.name !== undefined) { hasBody = true; body['name'] = opts.name }
+      if (opts.externalId !== undefined) { hasBody = true; body['external_id'] = opts.externalId }
+      if (opts.folderName !== undefined) { hasBody = true; body['folder_name'] = opts.folderName }
+      if (opts.sharedLink !== undefined) { hasBody = true; body['shared_link'] = opts.sharedLink }
+      if (opts.file !== undefined) {
+        hasBody = true
+        const fileContent = readFileSync(opts.file)
+        const base64 = Buffer.from(fileContent).toString('base64')
+        const fileName = opts.file.split('/').pop() || 'document'
+        body.documents = [{ name: fileName, file: `data:application/octet-stream;base64,${base64}` }]
+      }
+      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+
+      try {
+        const result = await apiFetch('/templates/docx', {
+          method: 'POST',
+          body: hasBody ? body : undefined,
+          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
+        })
+        renderJson(result)
+      } catch (err) {
+        if (err instanceof DocuSealError) {
+          renderJson(err.body || { error: err.message, status: err.status })
+          process.exit(1)
+        }
+        throw err
+      }
+    })
+
+  topic
+    .command('create-html')
+    .description('Create a template from HTML')
+    .option('--api-key <value>', 'Override API key for this invocation')
+    .option('--server <value>', 'Server: com, eu, or full URL')
+    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
+    .addOption(new Option('--html <value>', 'HTML template with field tags.'))
+    .addOption(new Option('--html-header <value>', 'HTML template of the header to be displayed on every page.'))
+    .addOption(new Option('--html-footer <value>', 'HTML template of the footer to be displayed on every page.'))
+    .addOption(new Option('--name <value>', 'Template name. Random uuid will be assigned when not specified.'))
+    .addOption(new Option('--size <value>', 'Page size. Letter 8.5 x 11 will be assigned when not specified.').choices(['Letter', 'Legal', 'Tabloid', 'Ledger', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6']))
+    .addOption(new Option('--external-id <value>', 'Your application-specific unique string key to identify this template within your app. Existing template with specified `external_id` will be updated with a new HTML.'))
+    .addOption(new Option('--folder-name <value>', 'The folder\'s name in which the template should be created.'))
+    .option('--shared-link', 'Set to `true` to make the template available via a shared link. This will allow anyone with the link to create a submission from this template.')
+    .option('--no-shared-link', '')
+    .addOption(new Option('--html-file <value>', 'Path to local HTML file (alternative to --html)'))
+    .addHelpText('after', '\nExamples:\n  $ docuseal templates create-html --html "<p>{{name}}</p>" --name "Simple"\n  $ docuseal templates create-html --html-file template.html --name "Contract"')
+    .action(async (opts) => {
+      const configOverrides = {}
+      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
+      if (opts.server) configOverrides.server = opts.server
+
+      const body = {}
+      let hasBody = false
+      if (opts.html !== undefined) { hasBody = true; body['html'] = opts.html }
+      if (opts.htmlHeader !== undefined) { hasBody = true; body['html_header'] = opts.htmlHeader }
+      if (opts.htmlFooter !== undefined) { hasBody = true; body['html_footer'] = opts.htmlFooter }
+      if (opts.name !== undefined) { hasBody = true; body['name'] = opts.name }
+      if (opts.size !== undefined) { hasBody = true; body['size'] = opts.size }
+      if (opts.externalId !== undefined) { hasBody = true; body['external_id'] = opts.externalId }
+      if (opts.folderName !== undefined) { hasBody = true; body['folder_name'] = opts.folderName }
+      if (opts.sharedLink !== undefined) { hasBody = true; body['shared_link'] = opts.sharedLink }
+      if (opts.htmlFile !== undefined) { hasBody = true; body.html = readFileSync(opts.htmlFile, 'utf8') }
+      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+
+      try {
+        const result = await apiFetch('/templates/html', {
+          method: 'POST',
+          body: hasBody ? body : undefined,
+          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
+        })
+        renderJson(result)
+      } catch (err) {
+        if (err instanceof DocuSealError) {
+          renderJson(err.body || { error: err.message, status: err.status })
+          process.exit(1)
+        }
+        throw err
+      }
+    })
+
+  topic
+    .command('clone')
+    .description('Clone a template')
+    .argument('<id>', 'The id of the resource')
+    .option('--api-key <value>', 'Override API key for this invocation')
+    .option('--server <value>', 'Server: com, eu, or full URL')
+    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
+    .addOption(new Option('--name <value>', 'Template name. Existing name with (Clone) suffix will be used if not specified.'))
+    .addOption(new Option('--folder-name <value>', 'The folder\'s name to which the template should be cloned.'))
+    .addOption(new Option('--external-id <value>', 'Your application-specific unique string key to identify this template within your app.'))
+    .addHelpText('after', '\nExamples:\n  $ docuseal templates clone 1001\n  $ docuseal templates clone 1001 --name "NDA Copy"')
+    .action(async (id, opts) => {
+      const configOverrides = {}
+      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
+      if (opts.server) configOverrides.server = opts.server
+
+      const body = {}
+      let hasBody = false
+      if (opts.name !== undefined) { hasBody = true; body['name'] = opts.name }
+      if (opts.folderName !== undefined) { hasBody = true; body['folder_name'] = opts.folderName }
+      if (opts.externalId !== undefined) { hasBody = true; body['external_id'] = opts.externalId }
+      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+
+      try {
+        const result = await apiFetch(`/templates/${id}/clone`, {
+          method: 'POST',
+          body: hasBody ? body : undefined,
+          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
+        })
+        renderJson(result)
+      } catch (err) {
+        if (err instanceof DocuSealError) {
+          renderJson(err.body || { error: err.message, status: err.status })
+          process.exit(1)
+        }
+        throw err
+      }
+    })
+
+  topic
+    .command('merge')
+    .description('Merge templates')
+    .option('--api-key <value>', 'Override API key for this invocation')
+    .option('--server <value>', 'Server: com, eu, or full URL')
+    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
+    .addOption(new Option('--name <value>', 'Template name. Existing name with (Merged) suffix will be used if not specified.'))
+    .addOption(new Option('--folder-name <value>', 'The name of the folder in which the merged template should be placed.'))
+    .addOption(new Option('--external-id <value>', 'Your application-specific unique string key to identify this template within your app.'))
+    .option('--shared-link', 'Set to `true` to make the template available via a shared link. This will allow anyone with the link to create a submission from this template.')
+    .option('--no-shared-link', '')
+    .addHelpText('after', '\nExamples:\n  $ docuseal templates merge --template-ids 1001,1002\n  $ docuseal templates merge --template-ids 1001,1002 --name "Combined"')
+    .action(async (opts) => {
+      const configOverrides = {}
+      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
+      if (opts.server) configOverrides.server = opts.server
+
+      const body = {}
+      let hasBody = false
+      if (opts.name !== undefined) { hasBody = true; body['name'] = opts.name }
+      if (opts.folderName !== undefined) { hasBody = true; body['folder_name'] = opts.folderName }
+      if (opts.externalId !== undefined) { hasBody = true; body['external_id'] = opts.externalId }
+      if (opts.sharedLink !== undefined) { hasBody = true; body['shared_link'] = opts.sharedLink }
+      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+
+      try {
+        const result = await apiFetch('/templates/merge', {
+          method: 'POST',
+          body: hasBody ? body : undefined,
+          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
+        })
+        renderJson(result)
+      } catch (err) {
+        if (err instanceof DocuSealError) {
+          renderJson(err.body || { error: err.message, status: err.status })
+          process.exit(1)
+        }
+        throw err
+      }
+    })
+
+  topic
+    .command('update-documents')
+    .description('Update template documents')
+    .argument('<id>', 'The id of the resource')
+    .option('--api-key <value>', 'Override API key for this invocation')
+    .option('--server <value>', 'Server: com, eu, or full URL')
+    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
+    .option('--merge', 'Set to `true` to merge all existing and new documents into a single PDF document in the template.')
+    .option('--no-merge', '')
+    .addHelpText('after', '\nExamples:\n  $ docuseal templates update-documents 1001')
+    .action(async (id, opts) => {
+      const configOverrides = {}
+      if (opts.apiKey) configOverrides.apiKey = opts.apiKey
+      if (opts.server) configOverrides.server = opts.server
+
+      const body = {}
+      let hasBody = false
+      if (opts.merge !== undefined) { hasBody = true; body['merge'] = opts.merge }
+      if (opts.data.length > 0) { hasBody = true; deepMerge(body, parseDataFlags(opts.data)) }
+
+      try {
+        const result = await apiFetch(`/templates/${id}/documents`, {
+          method: 'PUT',
+          body: hasBody ? body : undefined,
+          configOverrides: Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
+        })
+        renderJson(result)
+      } catch (err) {
+        if (err instanceof DocuSealError) {
+          renderJson(err.body || { error: err.message, status: err.status })
+          process.exit(1)
+        }
+        throw err
+      }
+    })
+}

@@ -3,7 +3,10 @@
     "allow": [
       "Bash(npx stripe:*)",
       "Bash(brew list:*)",
-      "Bash(stripe customers list:*)"
+      "Bash(stripe customers list:*)",
+      "Bash(node -e:*)",
+      "Bash(node:*)",
+      "Bash(echo:*)"
     ]
   }
 }
