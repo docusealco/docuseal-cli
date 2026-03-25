@@ -59,7 +59,7 @@ export function registerTemplateCommands(program) {
     .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--name <value>', 'The name of the template'))
     .addOption(new Option('--folder-name <value>', 'The folder\'s name to which the template should be moved.'))
-    .option('--archived', 'Set `false` to unarchive template.')
+    .option('--archived', 'Archive or unarchive the template.')
     .option('--no-archived', '')
     .addHelpText('after', '\nExamples:\n  $ docuseal templates update 1001 --name "NDA v2"\n  $ docuseal templates update 1001 --folder-name Contracts\n  $ docuseal templates update 1001 --no-archived')
     .action(async (id, opts) => {
@@ -85,15 +85,19 @@ export function registerTemplateCommands(program) {
 
   topic
     .command('create-pdf')
-    .description('Create a template from PDF')
+    .description('Create a template from PDF (Pro)')
     .option('--api-key <value>', 'Override API key for this invocation')
     .option('--server <value>', 'Server: com, eu, or full URL')
     .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--name <value>', 'Name of the template'))
     .addOption(new Option('--folder-name <value>', 'The folder\'s name in which the template should be created.'))
     .addOption(new Option('--external-id <value>', 'Your application-specific unique string key to identify this template within your app. Existing template with specified `external_id` will be updated with a new PDF.'))
-    .option('--shared-link', 'Set to `true` to make the template available via a shared link. This will allow anyone with the link to create a submission from this template.')
+    .option('--shared-link', 'Make the template available via a shared link.')
     .option('--no-shared-link', '')
+    .option('--flatten', 'Remove PDF form fields from the documents.')
+    .option('--no-flatten', '')
+    .option('--remove-tags', 'Remove {{text}} tags from the PDF (enabled by default).')
+    .option('--no-remove-tags', '')
     .addOption(new Option('--file <value>', 'Path to local PDF file').makeOptionMandatory())
     .addHelpText('after', '\nExamples:\n  $ docuseal templates create-pdf --file contract.pdf --name "NDA"\n  $ docuseal templates create-pdf --file form.pdf --folder-name Legal')
     .action(async (opts) => {
@@ -102,6 +106,8 @@ export function registerTemplateCommands(program) {
       if (opts.folderName !== undefined) body['folder_name'] = opts.folderName
       if (opts.externalId !== undefined) body['external_id'] = opts.externalId
       if (opts.sharedLink !== undefined) body['shared_link'] = opts.sharedLink
+      if (opts.flatten !== undefined) body['flatten'] = opts.flatten
+      if (opts.removeTags !== undefined) body['remove_tags'] = opts.removeTags
       if (opts.file !== undefined) {
         const fileContent = readFileSync(opts.file)
         const base64 = Buffer.from(fileContent).toString('base64')
@@ -115,14 +121,14 @@ export function registerTemplateCommands(program) {
 
   topic
     .command('create-docx')
-    .description('Create a template from Word DOCX')
+    .description('Create a template from Word DOCX (Pro)')
     .option('--api-key <value>', 'Override API key for this invocation')
     .option('--server <value>', 'Server: com, eu, or full URL')
     .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--name <value>', 'Name of the template'))
     .addOption(new Option('--external-id <value>', 'Your application-specific unique string key to identify this template within your app. Existing template with specified `external_id` will be updated with a new document.'))
     .addOption(new Option('--folder-name <value>', 'The folder\'s name in which the template should be created.'))
-    .option('--shared-link', 'Set to `true` to make the template available via a shared link. This will allow anyone with the link to create a submission from this template.')
+    .option('--shared-link', 'Make the template available via a shared link.')
     .option('--no-shared-link', '')
     .addOption(new Option('--file <value>', 'Path to local DOCX file').makeOptionMandatory())
     .addHelpText('after', '\nExamples:\n  $ docuseal templates create-docx --file template.docx --name "Contract"')
@@ -145,7 +151,7 @@ export function registerTemplateCommands(program) {
 
   topic
     .command('create-html')
-    .description('Create a template from HTML')
+    .description('Create a template from HTML (Pro)')
     .option('--api-key <value>', 'Override API key for this invocation')
     .option('--server <value>', 'Server: com, eu, or full URL')
     .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
@@ -156,7 +162,7 @@ export function registerTemplateCommands(program) {
     .addOption(new Option('--size <value>', 'Page size. Letter 8.5 x 11 will be assigned when not specified.').choices(['Letter', 'Legal', 'Tabloid', 'Ledger', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6']))
     .addOption(new Option('--external-id <value>', 'Your application-specific unique string key to identify this template within your app. Existing template with specified `external_id` will be updated with a new HTML.'))
     .addOption(new Option('--folder-name <value>', 'The folder\'s name in which the template should be created.'))
-    .option('--shared-link', 'Set to `true` to make the template available via a shared link. This will allow anyone with the link to create a submission from this template.')
+    .option('--shared-link', 'Make the template available via a shared link.')
     .option('--no-shared-link', '')
     .addOption(new Option('--html-file <value>', 'Path to local HTML file (alternative to --html)'))
     .addHelpText('after', '\nExamples:\n  $ docuseal templates create-html --html "<p>{{name}}</p>" --name "Simple"\n  $ docuseal templates create-html --html-file template.html --name "Contract"')
@@ -199,14 +205,14 @@ export function registerTemplateCommands(program) {
 
   topic
     .command('merge')
-    .description('Merge templates')
+    .description('Merge templates (Pro)')
     .option('--api-key <value>', 'Override API key for this invocation')
     .option('--server <value>', 'Server: com, eu, or full URL')
     .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--name <value>', 'Template name. Existing name with (Merged) suffix will be used if not specified.'))
     .addOption(new Option('--folder-name <value>', 'The name of the folder in which the merged template should be placed.'))
     .addOption(new Option('--external-id <value>', 'Your application-specific unique string key to identify this template within your app.'))
-    .option('--shared-link', 'Set to `true` to make the template available via a shared link. This will allow anyone with the link to create a submission from this template.')
+    .option('--shared-link', 'Make the template available via a shared link.')
     .option('--no-shared-link', '')
     .addHelpText('after', '\nExamples:\n  $ docuseal templates merge --template-ids 1001,1002\n  $ docuseal templates merge --template-ids 1001,1002 --name "Combined"')
     .action(async (opts) => {
@@ -222,12 +228,12 @@ export function registerTemplateCommands(program) {
 
   topic
     .command('update-documents')
-    .description('Update template documents')
+    .description('Update template documents (Pro)')
     .argument('<id>', 'The id of the resource')
     .option('--api-key <value>', 'Override API key for this invocation')
     .option('--server <value>', 'Server: com, eu, or full URL')
     .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
-    .option('--merge', 'Set to `true` to merge all existing and new documents into a single PDF document in the template.')
+    .option('--merge', 'Merge all existing and new documents into a single PDF.')
     .option('--no-merge', '')
     .addHelpText('after', '\nExamples:\n  $ docuseal templates update-documents 1001')
     .action(async (id, opts) => {
