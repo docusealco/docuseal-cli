@@ -3,16 +3,13 @@ import { readFileSync } from 'fs'
 import { createClient, onError } from '../lib/api.js'
 import { renderJson } from '../lib/output.js'
 import { parseDataFlags, deepMerge } from '../lib/data-flags.js'
+import { withGlobalOptions } from '../lib/global-options.js'
 
 export function registerSubmissionCommands(program) {
   const topic = program.command('submissions').description('Manage submissions')
 
-  topic
-    .command('list')
+  withGlobalOptions(topic.command('list'))
     .description('List all submissions')
-    .option('--api-key <value>', 'Override API key for this invocation')
-    .option('--server <value>', 'Server: com, eu, or full URL')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--template-id <value>', 'The template ID allows you to receive only the submissions created from that specific template.').argParser(parseInt))
     .addOption(new Option('--status <value>', 'Filter submissions by status.').choices(['pending', 'completed', 'declined', 'expired']))
     .addOption(new Option('--q <value>', 'Filter submissions based on submitters name, email or phone partial match.'))
@@ -23,7 +20,7 @@ export function registerSubmissionCommands(program) {
     .addOption(new Option('-l, --limit <value>', 'The number of submissions to return. Default value is 10. Maximum value is 100.').argParser(parseInt))
     .addOption(new Option('-a, --after <value>', 'The unique identifier of the submission to start the list from. It allows you to receive only submissions with an ID greater than the specified value. Pass ID value from the `pagination.next` response to load the next batch of submissions.').argParser(parseInt))
     .addOption(new Option('--before <value>', 'The unique identifier of the submission that marks the end of the list. It allows you to receive only submissions with an ID less than the specified value.').argParser(parseInt))
-    .addHelpText('after', '\nExamples:\n  $ docuseal submissions list\n  $ docuseal submissions list --status pending\n  $ docuseal submissions list --template-id 1001 --limit 50\n  $ docuseal submissions list | jq \'.data[].id\'')
+    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submissions list\n  $ docuseal submissions list --status pending\n  $ docuseal submissions list --template-id 1001 --limit 50\n  $ docuseal submissions list | jq \'.data[].id\'')
     .action(async (opts) => {
       const query = {}
       if (opts.templateId !== undefined) query['template_id'] = opts.templateId
@@ -35,39 +32,28 @@ export function registerSubmissionCommands(program) {
       if (opts.limit !== undefined) query['limit'] = opts.limit
       if (opts.after !== undefined) query['after'] = opts.after
       if (opts.before !== undefined) query['before'] = opts.before
-      if (opts.data.length > 0) Object.assign(query, parseDataFlags(opts.data))
 
       createClient(opts).listSubmissions(query).then(renderJson, onError)
     })
 
-  topic
-    .command('retrieve')
+  withGlobalOptions(topic.command('retrieve'))
     .description('Get a submission')
     .argument('<id>', 'The id of the resource')
-    .option('--api-key <value>', 'Override API key for this invocation')
-    .option('--server <value>', 'Server: com, eu, or full URL')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
-    .addHelpText('after', '\nExamples:\n  $ docuseal submissions retrieve 502')
+    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submissions retrieve 502')
     .action(async (id, opts) => {
       createClient(opts).getSubmission(id).then(renderJson, onError)
     })
 
-  topic
-    .command('archive')
+  withGlobalOptions(topic.command('archive'))
     .description('Archive a submission')
     .argument('<id>', 'The id of the resource')
-    .option('--api-key <value>', 'Override API key for this invocation')
-    .option('--server <value>', 'Server: com, eu, or full URL')
-    .addHelpText('after', '\nExamples:\n  $ docuseal submissions archive 502')
+    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submissions archive 502')
     .action(async (id, opts) => {
       createClient(opts).archiveSubmission(id).then(renderJson, onError)
     })
 
-  topic
-    .command('create')
+  withGlobalOptions(topic.command('create'))
     .description('Create a submission')
-    .option('--api-key <value>', 'Override API key for this invocation')
-    .option('--server <value>', 'Server: com, eu, or full URL')
     .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--template-id <value>', 'The unique identifier of the template.').argParser(parseInt).makeOptionMandatory())
     .option('--send-email', 'Send signature request emails (enabled by default).')
@@ -79,7 +65,7 @@ export function registerSubmissionCommands(program) {
     .addOption(new Option('--bcc-completed <value>', 'Specify BCC address to send signed documents to after the completion.'))
     .addOption(new Option('--reply-to <value>', 'Specify Reply-To address to use in the notification emails.'))
     .addOption(new Option('--expire-at <value>', 'Specify the expiration date and time after which the submission becomes unavailable for signature.'))
-    .addHelpText('after', '\nExamples:\n  $ docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com"\n  $ docuseal submissions create --template-id 1001 -d "submitters[0][email]=a@b.com" -d "submitters[1][email]=c@d.com"\n  $ docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com" -d "submitters[0][role]=Signer"\n  $ docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com" --no-send-email')
+    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com"\n  $ docuseal submissions create --template-id 1001 -d "submitters[0][email]=a@b.com" -d "submitters[1][email]=c@d.com"\n  $ docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com" -d "submitters[0][role]=Signer"\n  $ docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com" --no-send-email')
     .action(async (opts) => {
       const body = {}
       if (opts.templateId !== undefined) body['template_id'] = opts.templateId
@@ -95,17 +81,14 @@ export function registerSubmissionCommands(program) {
       createClient(opts).createSubmission(body).then(renderJson, onError)
     })
 
-  topic
-    .command('send-emails')
+  withGlobalOptions(topic.command('send-emails'))
     .description('Create submissions from emails')
-    .option('--api-key <value>', 'Override API key for this invocation')
-    .option('--server <value>', 'Server: com, eu, or full URL')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
+    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "message[subject]=Hello")', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--template-id <value>', 'The unique identifier of the template.').argParser(parseInt).makeOptionMandatory())
     .addOption(new Option('--emails <value>', 'A comma-separated list of email addresses to send the submission to.').makeOptionMandatory())
     .option('--send-email', 'Send signature request emails (enabled by default).')
     .option('--no-send-email', '')
-    .addHelpText('after', '\nExamples:\n  $ docuseal submissions send-emails --template-id 1001 --emails a@b.com,c@d.com')
+    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submissions send-emails --template-id 1001 --emails a@b.com,c@d.com')
     .action(async (opts) => {
       const body = {}
       if (opts.templateId !== undefined) body['template_id'] = opts.templateId
@@ -116,11 +99,8 @@ export function registerSubmissionCommands(program) {
       createClient(opts).createSubmissionFromEmails(body).then(renderJson, onError)
     })
 
-  topic
-    .command('create-pdf')
+  withGlobalOptions(topic.command('create-pdf'))
     .description('Create a submission from PDF (Pro)')
-    .option('--api-key <value>', 'Override API key for this invocation')
-    .option('--server <value>', 'Server: com, eu, or full URL')
     .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--name <value>', 'Name of the document submission.'))
     .option('--send-email', 'Send signature request emails (enabled by default).')
@@ -139,7 +119,7 @@ export function registerSubmissionCommands(program) {
     .option('--remove-tags', 'Remove {{text}} tags from the PDF (enabled by default).')
     .option('--no-remove-tags', '')
     .addOption(new Option('--file <value>', 'Path to local PDF file').makeOptionMandatory())
-    .addHelpText('after', '\nExamples:\n  $ docuseal submissions create-pdf --file doc.pdf -d "submitters[0][email]=john@acme.com"')
+    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submissions create-pdf --file doc.pdf -d "submitters[0][email]=john@acme.com"')
     .action(async (opts) => {
       const body = {}
       if (opts.name !== undefined) body['name'] = opts.name
@@ -164,11 +144,8 @@ export function registerSubmissionCommands(program) {
       createClient(opts).createSubmissionFromPdf(body).then(renderJson, onError)
     })
 
-  topic
-    .command('create-docx')
+  withGlobalOptions(topic.command('create-docx'))
     .description('Create a submission from DOCX (Pro)')
-    .option('--api-key <value>', 'Override API key for this invocation')
-    .option('--server <value>', 'Server: com, eu, or full URL')
     .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--name <value>', 'Name of the document submission.'))
     .option('--send-email', 'Send signature request emails (enabled by default).')
@@ -185,7 +162,7 @@ export function registerSubmissionCommands(program) {
     .option('--remove-tags', 'Remove {{text}} tags from the PDF (enabled by default).')
     .option('--no-remove-tags', '')
     .addOption(new Option('--file <value>', 'Path to local DOCX file').makeOptionMandatory())
-    .addHelpText('after', '\nExamples:\n  $ docuseal submissions create-docx --file doc.docx -d "submitters[0][email]=john@acme.com"')
+    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submissions create-docx --file doc.docx -d "submitters[0][email]=john@acme.com"')
     .action(async (opts) => {
       const body = {}
       if (opts.name !== undefined) body['name'] = opts.name
@@ -209,11 +186,8 @@ export function registerSubmissionCommands(program) {
       createClient(opts).createSubmissionFromDocx(body).then(renderJson, onError)
     })
 
-  topic
-    .command('create-html')
+  withGlobalOptions(topic.command('create-html'))
     .description('Create a submission from HTML (Pro)')
-    .option('--api-key <value>', 'Override API key for this invocation')
-    .option('--server <value>', 'Server: com, eu, or full URL')
     .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--name <value>', 'Name of the document submission'))
     .option('--send-email', 'Send signature request emails (enabled by default).')
@@ -228,7 +202,7 @@ export function registerSubmissionCommands(program) {
     .option('--merge-documents', 'Merge documents into a single PDF file.')
     .option('--no-merge-documents', '')
     .addOption(new Option('--html-file <value>', 'Path to local HTML file'))
-    .addHelpText('after', '\nExamples:\n  $ docuseal submissions create-html --html "<p>{{name}}</p>" -d "submitters[0][email]=john@acme.com"')
+    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submissions create-html --html "<p>{{name}}</p>" -d "submitters[0][email]=john@acme.com"')
     .action(async (opts) => {
       const body = {}
       if (opts.name !== undefined) body['name'] = opts.name
@@ -246,20 +220,15 @@ export function registerSubmissionCommands(program) {
       createClient(opts).createSubmissionFromHtml(body).then(renderJson, onError)
     })
 
-  topic
-    .command('documents')
+  withGlobalOptions(topic.command('documents'))
     .description('Get submission documents')
     .argument('<id>', 'The id of the resource')
-    .option('--api-key <value>', 'Override API key for this invocation')
-    .option('--server <value>', 'Server: com, eu, or full URL')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
-    .option('--merge', 'When `true`, merges all documents into a single PDF.')
+    .option('--merge', 'Merge all documents into a single PDF.')
     .option('--no-merge', '')
-    .addHelpText('after', '\nExamples:\n  $ docuseal submissions documents 502\n  $ docuseal submissions documents 502 --merge')
+    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submissions documents 502\n  $ docuseal submissions documents 502 --merge')
     .action(async (id, opts) => {
       const query = {}
       if (opts.merge !== undefined) query['merge'] = opts.merge
-      if (opts.data.length > 0) Object.assign(query, parseDataFlags(opts.data))
 
       createClient(opts).getSubmissionDocuments(id, query).then(renderJson, onError)
     })

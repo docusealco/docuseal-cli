@@ -12,7 +12,8 @@
       "Bash(npm test:*)",
       "WebFetch(domain:www.docuseal.com)",
       "WebFetch(domain:console.docuseal.com)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(DOCUSEAL_API_KEY=test node:*)"
     ]
   }
 }

@@ -10,7 +10,7 @@ export function registerConfigure(program) {
     .option('--api-key <value>', 'API key to save')
     .option('--server <value>', 'Server: com, eu, or full URL (default: com)')
     .option('--list', 'Show current configuration and verify authentication')
-    .addHelpText('after', '\nExamples:\n  $ docuseal configure\n  $ docuseal configure --api-key YOUR_KEY --server com\n  $ docuseal configure --list')
+    .addHelpText('afterAll', '\nExamples:\n  $ docuseal configure\n  $ docuseal configure --api-key YOUR_KEY --server com\n  $ docuseal configure --list')
     .action(async (opts) => {
       if (opts.list) {
         try {

@@ -1,5 +1,6 @@
 import { createClient, onError } from '../lib/api.js'
 import { renderJson } from '../lib/output.js'
+import { withGlobalOptions } from '../lib/global-options.js'
 
 function parseDataFlags(pairs) {
   const result = {}
@@ -12,14 +13,11 @@ function parseDataFlags(pairs) {
 }
 
 function registerRawCommand(program, name, method) {
-  program
-    .command(name)
+  withGlobalOptions(program.command(name))
     .description(`Make a raw ${method} request to the API`)
     .argument('<path>', 'API path (e.g. /templates, /submissions/1)')
-    .option('--api-key <value>', 'Override API key for this invocation')
-    .option('--server <value>', 'Server: com, eu, or full URL')
     .option('-d, --data <value>', 'Set body parameters (e.g. -d "name=NDA")', (val, prev) => prev.concat([val]), [])
-    .addHelpText('after', `\nExamples:\n  $ docuseal ${name} /templates\n  $ docuseal ${name} /templates/1`)
+    .addHelpText('afterAll', `\nExamples:\n  $ docuseal ${name} /templates\n  $ docuseal ${name} /templates/1`)
     .action(async (path, opts) => {
       const data = opts.data.length > 0 ? parseDataFlags(opts.data) : undefined
 
