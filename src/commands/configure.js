@@ -2,6 +2,7 @@ import { createInterface } from 'readline'
 import { DocusealApi } from '@docuseal/api'
 import { loadConfig, saveConfig, resolveServer } from '../lib/config.js'
 import { renderSuccess, renderError } from '../lib/output.js'
+import { formatExamples } from '../lib/global-options.js'
 
 export function registerConfigure(program) {
   program
@@ -10,7 +11,11 @@ export function registerConfigure(program) {
     .option('--api-key <value>', 'API key to save')
     .option('--server <value>', 'Server: com, eu, or full URL (default: com)')
     .option('--list', 'Show current configuration and verify authentication')
-    .addHelpText('afterAll', '\nExamples:\n  $ docuseal configure\n  $ docuseal configure --api-key YOUR_KEY --server com\n  $ docuseal configure --list')
+    .addHelpText('afterAll', formatExamples([
+      'docuseal configure',
+      'docuseal configure --api-key YOUR_KEY --server com',
+      'docuseal configure --list',
+    ]))
     .action(async (opts) => {
       if (opts.list) {
         try {

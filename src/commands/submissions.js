@@ -3,7 +3,7 @@ import { readFileSync } from 'fs'
 import { createClient, onError } from '../lib/api.js'
 import { renderJson } from '../lib/output.js'
 import { parseDataFlags, deepMerge } from '../lib/data-flags.js'
-import { withGlobalOptions } from '../lib/global-options.js'
+import { withGlobalOptions, formatDataParams, formatExamples } from '../lib/global-options.js'
 
 export function registerSubmissionCommands(program) {
   const topic = program.command('submissions').description('Manage submissions')
@@ -20,7 +20,11 @@ export function registerSubmissionCommands(program) {
     .addOption(new Option('-l, --limit <value>', 'The number of submissions to return. Default value is 10. Maximum value is 100.').argParser(parseInt))
     .addOption(new Option('-a, --after <value>', 'The unique identifier of the submission to start the list from. It allows you to receive only submissions with an ID greater than the specified value. Pass ID value from the `pagination.next` response to load the next batch of submissions.').argParser(parseInt))
     .addOption(new Option('--before <value>', 'The unique identifier of the submission that marks the end of the list. It allows you to receive only submissions with an ID less than the specified value.').argParser(parseInt))
-    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submissions list\n  $ docuseal submissions list --status pending\n  $ docuseal submissions list --template-id 1001 --limit 50\n  $ docuseal submissions list | jq \'.data[].id\'')
+    .addHelpText('afterAll', formatExamples([
+      'docuseal submissions list',
+      'docuseal submissions list --status pending',
+      'docuseal submissions list --template-id 1001 --limit 50',
+    ]))
     .action(async (opts) => {
       const query = {}
       if (opts.templateId !== undefined) query['template_id'] = opts.templateId
@@ -39,7 +43,9 @@ export function registerSubmissionCommands(program) {
   withGlobalOptions(topic.command('retrieve'))
     .description('Get a submission')
     .argument('<id>', 'The id of the resource')
-    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submissions retrieve 502')
+    .addHelpText('afterAll', formatExamples([
+      'docuseal submissions retrieve 502',
+    ]))
     .action(async (id, opts) => {
       createClient(opts).getSubmission(id).then(renderJson, onError)
     })
@@ -47,14 +53,16 @@ export function registerSubmissionCommands(program) {
   withGlobalOptions(topic.command('archive'))
     .description('Archive a submission')
     .argument('<id>', 'The id of the resource')
-    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submissions archive 502')
+    .addHelpText('afterAll', formatExamples([
+      'docuseal submissions archive 502',
+    ]))
     .action(async (id, opts) => {
       createClient(opts).archiveSubmission(id).then(renderJson, onError)
     })
 
   withGlobalOptions(topic.command('create'))
     .description('Create a submission')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
+    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--template-id <value>', 'The unique identifier of the template.').argParser(parseInt).makeOptionMandatory())
     .option('--send-email', 'Send signature request emails (enabled by default).')
     .option('--no-send-email', '')
@@ -65,7 +73,41 @@ export function registerSubmissionCommands(program) {
     .addOption(new Option('--bcc-completed <value>', 'Specify BCC address to send signed documents to after the completion.'))
     .addOption(new Option('--reply-to <value>', 'Specify Reply-To address to use in the notification emails.'))
     .addOption(new Option('--expire-at <value>', 'Specify the expiration date and time after which the submission becomes unavailable for signature.'))
-    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com"\n  $ docuseal submissions create --template-id 1001 -d "submitters[0][email]=a@b.com" -d "submitters[1][email]=c@d.com"\n  $ docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com" -d "submitters[0][role]=Signer"\n  $ docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com" --no-send-email')
+    .addHelpText('after', formatDataParams([
+      ['submitters[N][email]', 'Email address (required)'],
+      ['submitters[N][role]', 'Role name (e.g. "First Party")'],
+      ['submitters[N][name]', 'Full name'],
+      ['submitters[N][phone]', 'Phone (E.164, e.g. +1234567890)'],
+      ['submitters[N][external_id]', 'App-specific ID'],
+      ['submitters[N][completed]', 'Mark as completed (true/false)'],
+      ['submitters[N][send_email]', 'Send email (true/false)'],
+      ['submitters[N][send_sms]', 'Send SMS (true/false)'],
+      ['submitters[N][values][fieldName]', 'Pre-filled field value'],
+      ['submitters[N][reply_to]', 'Reply-To email'],
+      ['submitters[N][completed_redirect_url]', 'Redirect URL after completion'],
+      ['submitters[N][order]', 'Signing order (0, 1, 2...)'],
+      ['submitters[N][require_phone_2fa]', 'Require phone 2FA (true/false)'],
+      ['submitters[N][require_email_2fa]', 'Require email 2FA (true/false)'],
+      ['submitters[N][metadata][key]', 'Submitter metadata'],
+      ['submitters[N][message][subject]', 'Per-submitter email subject'],
+      ['submitters[N][message][body]', 'Per-submitter email body'],
+      ['submitters[N][roles][]', 'Merge multiple roles'],
+      ['submitters[N][fields][M][name]', 'Field name (required)'],
+      ['submitters[N][fields][M][default_value]', 'Default value'],
+      ['submitters[N][fields][M][readonly]', 'Read-only (true/false)'],
+      ['submitters[N][fields][M][required]', 'Required (true/false)'],
+      ['submitters[N][fields][M][title]', 'Display title (Markdown)'],
+      ['submitters[N][fields][M][description]', 'Display description (Markdown)'],
+      ['message[subject]', 'Custom email subject'],
+      ['message[body]', 'Custom email body'],
+      ['variables[key]', 'Template variable'],
+    ]))
+    .addHelpText('afterAll', formatExamples([
+      'docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com"',
+      'docuseal submissions create --template-id 1001 -d "submitters[0][email]=a@b.com" -d "submitters[1][email]=c@d.com"',
+      'docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com" -d "submitters[0][role]=Signer"',
+      'docuseal submissions create --template-id 1001 -d "submitters[0][email]=john@acme.com" --no-send-email',
+    ]))
     .action(async (opts) => {
       const body = {}
       if (opts.templateId !== undefined) body['template_id'] = opts.templateId
@@ -83,12 +125,19 @@ export function registerSubmissionCommands(program) {
 
   withGlobalOptions(topic.command('send-emails'))
     .description('Create submissions from emails')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "message[subject]=Hello")', (val, prev) => prev.concat([val]), [])
+    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--template-id <value>', 'The unique identifier of the template.').argParser(parseInt).makeOptionMandatory())
     .addOption(new Option('--emails <value>', 'A comma-separated list of email addresses to send the submission to.').makeOptionMandatory())
     .option('--send-email', 'Send signature request emails (enabled by default).')
     .option('--no-send-email', '')
-    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submissions send-emails --template-id 1001 --emails a@b.com,c@d.com')
+    .addHelpText('after', formatDataParams([
+      ['message[subject]', 'Custom email subject'],
+      ['message[body]', 'Custom email body'],
+    ]))
+    .addHelpText('afterAll', formatExamples([
+      'docuseal submissions send-emails --template-id 1001 --emails a@b.com,c@d.com',
+      'docuseal submissions send-emails --template-id 1001 --emails a@b.com -d "message[subject]=Please sign" -d "message[body]=Hello"',
+    ]))
     .action(async (opts) => {
       const body = {}
       if (opts.templateId !== undefined) body['template_id'] = opts.templateId
@@ -101,7 +150,7 @@ export function registerSubmissionCommands(program) {
 
   withGlobalOptions(topic.command('create-pdf'))
     .description('Create a submission from PDF (Pro)')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
+    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--name <value>', 'Name of the document submission.'))
     .option('--send-email', 'Send signature request emails (enabled by default).')
     .option('--no-send-email', '')
@@ -119,7 +168,28 @@ export function registerSubmissionCommands(program) {
     .option('--remove-tags', 'Remove {{text}} tags from the PDF (enabled by default).')
     .option('--no-remove-tags', '')
     .addOption(new Option('--file <value>', 'Path to local PDF file').makeOptionMandatory())
-    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submissions create-pdf --file doc.pdf -d "submitters[0][email]=john@acme.com"')
+    .addHelpText('after', formatDataParams([
+      ['submitters[N][email]', 'Email address (required)'],
+      ['submitters[N][role]', 'Role name'],
+      ['submitters[N][name]', 'Full name'],
+      ['submitters[N][phone]', 'Phone (E.164)'],
+      ['submitters[N][external_id]', 'App-specific ID'],
+      ['submitters[N][completed]', 'Mark as completed (true/false)'],
+      ['submitters[N][send_email]', 'Send email (true/false)'],
+      ['submitters[N][send_sms]', 'Send SMS (true/false)'],
+      ['submitters[N][values][fieldName]', 'Pre-filled field value'],
+      ['submitters[N][metadata][key]', 'Submitter metadata'],
+      ['submitters[N][fields][M][name]', 'Field name (required)'],
+      ['submitters[N][fields][M][default_value]', 'Default value'],
+      ['submitters[N][fields][M][readonly]', 'Read-only (true/false)'],
+      ['submitters[N][fields][M][required]', 'Required (true/false)'],
+      ['submitters[N][invite_by]', 'Role name of inviting party'],
+      ['message[subject]', 'Custom email subject'],
+      ['message[body]', 'Custom email body'],
+    ]))
+    .addHelpText('afterAll', formatExamples([
+      'docuseal submissions create-pdf --file doc.pdf -d "submitters[0][email]=john@acme.com"',
+    ]))
     .action(async (opts) => {
       const body = {}
       if (opts.name !== undefined) body['name'] = opts.name
@@ -146,7 +216,7 @@ export function registerSubmissionCommands(program) {
 
   withGlobalOptions(topic.command('create-docx'))
     .description('Create a submission from DOCX (Pro)')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
+    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--name <value>', 'Name of the document submission.'))
     .option('--send-email', 'Send signature request emails (enabled by default).')
     .option('--no-send-email', '')
@@ -162,7 +232,29 @@ export function registerSubmissionCommands(program) {
     .option('--remove-tags', 'Remove {{text}} tags from the PDF (enabled by default).')
     .option('--no-remove-tags', '')
     .addOption(new Option('--file <value>', 'Path to local DOCX file').makeOptionMandatory())
-    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submissions create-docx --file doc.docx -d "submitters[0][email]=john@acme.com"')
+    .addHelpText('after', formatDataParams([
+      ['submitters[N][email]', 'Email address (required)'],
+      ['submitters[N][role]', 'Role name'],
+      ['submitters[N][name]', 'Full name'],
+      ['submitters[N][phone]', 'Phone (E.164)'],
+      ['submitters[N][external_id]', 'App-specific ID'],
+      ['submitters[N][completed]', 'Mark as completed (true/false)'],
+      ['submitters[N][send_email]', 'Send email (true/false)'],
+      ['submitters[N][send_sms]', 'Send SMS (true/false)'],
+      ['submitters[N][values][fieldName]', 'Pre-filled field value'],
+      ['submitters[N][metadata][key]', 'Submitter metadata'],
+      ['submitters[N][fields][M][name]', 'Field name (required)'],
+      ['submitters[N][fields][M][default_value]', 'Default value'],
+      ['submitters[N][fields][M][readonly]', 'Read-only (true/false)'],
+      ['submitters[N][fields][M][required]', 'Required (true/false)'],
+      ['submitters[N][invite_by]', 'Role name of inviting party'],
+      ['message[subject]', 'Custom email subject'],
+      ['message[body]', 'Custom email body'],
+      ['variables[key]', 'Template variable'],
+    ]))
+    .addHelpText('afterAll', formatExamples([
+      'docuseal submissions create-docx --file doc.docx -d "submitters[0][email]=john@acme.com"',
+    ]))
     .action(async (opts) => {
       const body = {}
       if (opts.name !== undefined) body['name'] = opts.name
@@ -188,7 +280,7 @@ export function registerSubmissionCommands(program) {
 
   withGlobalOptions(topic.command('create-html'))
     .description('Create a submission from HTML (Pro)')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "submitters[0][email]=john@acme.com")', (val, prev) => prev.concat([val]), [])
+    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--name <value>', 'Name of the document submission'))
     .option('--send-email', 'Send signature request emails (enabled by default).')
     .option('--no-send-email', '')
@@ -202,7 +294,32 @@ export function registerSubmissionCommands(program) {
     .option('--merge-documents', 'Merge documents into a single PDF file.')
     .option('--no-merge-documents', '')
     .addOption(new Option('--html-file <value>', 'Path to local HTML file'))
-    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submissions create-html --html "<p>{{name}}</p>" -d "submitters[0][email]=john@acme.com"')
+    .addHelpText('after', formatDataParams([
+      ['submitters[N][email]', 'Email address (required)'],
+      ['submitters[N][role]', 'Role name'],
+      ['submitters[N][name]', 'Full name'],
+      ['submitters[N][phone]', 'Phone (E.164)'],
+      ['submitters[N][external_id]', 'App-specific ID'],
+      ['submitters[N][completed]', 'Mark as completed (true/false)'],
+      ['submitters[N][send_email]', 'Send email (true/false)'],
+      ['submitters[N][send_sms]', 'Send SMS (true/false)'],
+      ['submitters[N][values][fieldName]', 'Pre-filled field value'],
+      ['submitters[N][metadata][key]', 'Submitter metadata'],
+      ['submitters[N][fields][M][name]', 'Field name (required)'],
+      ['submitters[N][fields][M][default_value]', 'Default value'],
+      ['submitters[N][fields][M][readonly]', 'Read-only (true/false)'],
+      ['submitters[N][fields][M][required]', 'Required (true/false)'],
+      ['submitters[N][invite_by]', 'Role name of inviting party'],
+      ['documents[N][html]', 'HTML template with field tags'],
+      ['documents[N][name]', 'Document name'],
+      ['documents[N][size]', 'Page size (Letter, A4, ...)'],
+      ['message[subject]', 'Custom email subject'],
+      ['message[body]', 'Custom email body'],
+    ]))
+    .addHelpText('afterAll', formatExamples([
+      'docuseal submissions create-html --html-file template.html -d "submitters[0][email]=john@acme.com"',
+      'docuseal submissions create-html -d "documents[0][html]=<p>{{name}}</p>" -d "submitters[0][email]=john@acme.com"',
+    ]))
     .action(async (opts) => {
       const body = {}
       if (opts.name !== undefined) body['name'] = opts.name
@@ -225,7 +342,10 @@ export function registerSubmissionCommands(program) {
     .argument('<id>', 'The id of the resource')
     .option('--merge', 'Merge all documents into a single PDF.')
     .option('--no-merge', '')
-    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submissions documents 502\n  $ docuseal submissions documents 502 --merge')
+    .addHelpText('afterAll', formatExamples([
+      'docuseal submissions documents 502',
+      'docuseal submissions documents 502 --merge',
+    ]))
     .action(async (id, opts) => {
       const query = {}
       if (opts.merge !== undefined) query['merge'] = opts.merge

@@ -2,7 +2,7 @@ import { Option } from 'commander'
 import { createClient, onError } from '../lib/api.js'
 import { renderJson } from '../lib/output.js'
 import { parseDataFlags, deepMerge } from '../lib/data-flags.js'
-import { withGlobalOptions } from '../lib/global-options.js'
+import { withGlobalOptions, formatDataParams, formatExamples } from '../lib/global-options.js'
 
 export function registerSubmitterCommands(program) {
   const topic = program.command('submitters').description('Manage submitters')
@@ -18,7 +18,10 @@ export function registerSubmitterCommands(program) {
     .addOption(new Option('-l, --limit <value>', 'The number of submitters to return. Default value is 10. Maximum value is 100.').argParser(parseInt))
     .addOption(new Option('-a, --after <value>', 'The unique identifier of the submitter to start the list from. It allows you to receive only submitters with id greater than the specified value. Pass ID value from the `pagination.next` response to load the next batch of submitters.').argParser(parseInt))
     .addOption(new Option('--before <value>', 'The unique identifier of the submitter to end the list with. It allows you to receive only submitters with id less than the specified value.').argParser(parseInt))
-    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submitters list\n  $ docuseal submitters list --submission-id 502')
+    .addHelpText('afterAll', formatExamples([
+      'docuseal submitters list',
+      'docuseal submitters list --submission-id 502',
+    ]))
     .action(async (opts) => {
       const query = {}
       if (opts.submissionId !== undefined) query['submission_id'] = opts.submissionId
@@ -37,7 +40,9 @@ export function registerSubmitterCommands(program) {
   withGlobalOptions(topic.command('retrieve'))
     .description('Get a submitter')
     .argument('<id>', 'The id of the resource')
-    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submitters retrieve 201')
+    .addHelpText('afterAll', formatExamples([
+      'docuseal submitters retrieve 201',
+    ]))
     .action(async (id, opts) => {
       createClient(opts).getSubmitter(id).then(renderJson, onError)
     })
@@ -45,7 +50,7 @@ export function registerSubmitterCommands(program) {
   withGlobalOptions(topic.command('update'))
     .description('Update a submitter')
     .argument('<id>', 'The id of the resource')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation (e.g. -d "fields[0][name]=Name")', (val, prev) => prev.concat([val]), [])
+    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--name <value>', 'The name of the submitter.'))
     .addOption(new Option('--email <value>', 'The email address of the submitter.'))
     .addOption(new Option('--phone <value>', 'The phone number of the submitter, formatted according to the E.164 standard.'))
@@ -62,7 +67,21 @@ export function registerSubmitterCommands(program) {
     .option('--no-require-phone-2fa', '')
     .option('--require-email-2fa', 'Require email 2FA verification via one-time code.')
     .option('--no-require-email-2fa', '')
-    .addHelpText('afterAll', '\nExamples:\n  $ docuseal submitters update 201 --email new@acme.com\n  $ docuseal submitters update 201 --completed')
+    .addHelpText('after', formatDataParams([
+      ['values[fieldName]', 'Pre-filled field value'],
+      ['metadata[key]', 'Submitter metadata'],
+      ['message[subject]', 'Custom email subject'],
+      ['message[body]', 'Custom email body'],
+      ['fields[N][name]', 'Field name (required)'],
+      ['fields[N][default_value]', 'Default value'],
+      ['fields[N][readonly]', 'Read-only (true/false)'],
+      ['fields[N][required]', 'Required (true/false)'],
+    ]))
+    .addHelpText('afterAll', formatExamples([
+      'docuseal submitters update 201 --email new@acme.com',
+      'docuseal submitters update 201 --completed',
+      'docuseal submitters update 201 -d "values[First Name]=John" -d "metadata[department]=Sales"',
+    ]))
     .action(async (id, opts) => {
       const body = {}
       if (opts.name !== undefined) body['name'] = opts.name

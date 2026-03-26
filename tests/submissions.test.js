@@ -95,6 +95,25 @@ describe('parseDataFlags', () => {
     )
   })
 
+  test('coerces booleans', () => {
+    assert.deepEqual(parseDataFlags(['flatten=true']), { flatten: true })
+    assert.deepEqual(parseDataFlags(['flatten=false']), { flatten: false })
+  })
+
+  test('coerces numbers', () => {
+    assert.deepEqual(parseDataFlags(['template_id=42']), { template_id: 42 })
+    assert.deepEqual(parseDataFlags(['limit=0']), { limit: 0 })
+  })
+
+  test('keeps strings as strings', () => {
+    assert.deepEqual(parseDataFlags(['name=NDA']), { name: 'NDA' })
+    assert.deepEqual(parseDataFlags(['email=a@b.com']), { email: 'a@b.com' })
+  })
+
+  test('empty value stays string', () => {
+    assert.deepEqual(parseDataFlags(['name=']), { name: '' })
+  })
+
   test('ignores entries without =', () => {
     assert.deepEqual(parseDataFlags(['invalid']), {})
   })

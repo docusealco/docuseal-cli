@@ -13,7 +13,9 @@
       "WebFetch(domain:www.docuseal.com)",
       "WebFetch(domain:console.docuseal.com)",
       "Bash(curl:*)",
-      "Bash(DOCUSEAL_API_KEY=test node:*)"
+      "Bash(DOCUSEAL_API_KEY=test node:*)",
+      "WebFetch(domain:api.docuseal.com)",
+      "Bash(python3:*)"
     ]
   }
 }

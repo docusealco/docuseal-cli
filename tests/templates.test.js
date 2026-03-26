@@ -325,7 +325,7 @@ describe('templates merge', () => {
     await cli('templates', 'merge', '-d', 'template_ids[]=1', '-d', 'template_ids[]=2')
     assert.equal(lastRequest.method, 'POST')
     assert.equal(lastRequest.path, '/templates/merge')
-    assert.deepEqual(lastRequest.body.template_ids, ['1', '2'])
+    assert.deepEqual(lastRequest.body.template_ids, [1, 2])
   })
 
   test('--name', async () => {

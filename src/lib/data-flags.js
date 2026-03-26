@@ -1,3 +1,10 @@
+function coerce(v) {
+  if (v === 'true') return true
+  if (v === 'false') return false
+  if (v !== '' && !isNaN(v)) return Number(v)
+  return v
+}
+
 export function parseDataFlags(pairs) {
   const result = {}
 
@@ -6,7 +13,7 @@ export function parseDataFlags(pairs) {
     if (eqIdx === -1) continue
 
     const rawKey = pair.slice(0, eqIdx)
-    const value = pair.slice(eqIdx + 1)
+    const value = coerce(pair.slice(eqIdx + 1))
 
     const segments = []
     const firstBracket = rawKey.indexOf('[')
