@@ -13,7 +13,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/@docuseal/cli"><img src="https://img.shields.io/npm/v/@docuseal/cli.svg" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/@docuseal/cli"><img src="https://img.shields.io/npm/dm/@docuseal/cli.svg" alt="npm downloads"></a>
-  <a href="https://github.com/docusealco/docuseal-cli/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@docuseal/cli.svg" alt="license"></a>
+  <a href="https://github.com/docusealco/docuseal-cli/blob/main/LICENSE.md"><img src="https://img.shields.io/npm/l/@docuseal/cli.svg" alt="license"></a>
 </p>
 
 ---
@@ -185,6 +185,13 @@ docuseal templates clone 1001 --name "NDA Copy"
 ```bash
 docuseal templates merge -d "template_ids[]=1001" -d "template_ids[]=1002"
 docuseal templates merge -d "template_ids[]=1001" -d "template_ids[]=1002" --name "Combined"
+```
+
+### Update Template Documents
+
+```bash
+docuseal templates update-documents 1001 -d "documents[0][file]=https://example.com/doc.pdf" -d "documents[0][name]=New Doc"
+docuseal templates update-documents 1001 --merge
 ```
 
 ### Archive Template
@@ -367,52 +374,6 @@ docuseal templates list --server https://docuseal.mycompany.com
 
 ---
 
-## Scripting
-
-### Batch Send from a File
-
-```bash
-while IFS= read -r email; do
-  docuseal submissions create \
-    --template-id 1001 \
-    -d "submitters[0][email]=$email" \
-    --send-email
-done < emails.txt
-```
-
-### Check Submission Status
-
-```bash
-status=$(docuseal submissions retrieve 502 | jq -r '.status')
-if [ "$status" = "completed" ]; then
-  echo "All signed!"
-fi
-```
-
-### Create Template and Send in One Flow
-
-```bash
-# Create template, capture ID
-template_id=$(docuseal templates create-pdf --file nda.pdf --name "NDA" | jq '.id')
-
-# Send for signing
-docuseal submissions create \
-  --template-id "$template_id" \
-  -d "submitters[0][email]=john@acme.com"
-```
-
-### CI/CD Integration
-
-```bash
-# Use environment variables (no config file needed)
-export DOCUSEAL_API_KEY=$DOCUSEAL_TOKEN
-export DOCUSEAL_SERVER=com
-
-docuseal submissions list
-```
-
----
-
 ## Development
 
 ### Setup
@@ -458,14 +419,6 @@ npm run build
 ```
 
 Bundles everything into `dist/index.js` using esbuild.
-
-### Publish
-
-```bash
-npm publish --access public
-```
-
-Build runs automatically via `prepublishOnly`.
 
 ---
 
