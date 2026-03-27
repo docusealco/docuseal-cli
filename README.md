@@ -167,6 +167,7 @@ docuseal templates create-html --html-file template.html --name "Contract"
 ```bash
 docuseal templates update 1001 --name "NDA v2"
 docuseal templates update 1001 --folder-name Contracts
+docuseal templates update 1001 -d "roles[]=Signer" -d "roles[]=Reviewer"
 ```
 
 ### Clone Template
@@ -179,8 +180,8 @@ docuseal templates clone 1001 --name "NDA Copy"
 ### Merge Templates
 
 ```bash
-docuseal templates merge --template-ids 1001,1002
-docuseal templates merge --template-ids 1001,1002 --name "Combined"
+docuseal templates merge -d "template_ids[]=1001" -d "template_ids[]=1002"
+docuseal templates merge -d "template_ids[]=1001" -d "template_ids[]=1002" --name "Combined"
 ```
 
 ### Archive Template
@@ -303,24 +304,27 @@ docuseal submitters update 201 --completed
 
 # Re-send signature request
 docuseal submitters update 201 --send-email
+
+# Pre-fill fields and metadata
+docuseal submitters update 201 -d "values[First Name]=John" -d "metadata[department]=Sales"
 ```
 
 ---
 
 ## Raw HTTP Commands
 
-Make direct API requests, like `stripe get /v1/...`:
+Make direct API requests:
 
 ```bash
 # GET request
 docuseal get /templates
-docuseal get '/templates?limit=5'
+docuseal get /submissions/1
 
 # POST request with data
-docuseal post /submissions -d "template_id=1001" -d "submitters[0][email]=john@acme.com"
+docuseal post /submissions/init -d "template_id=1001" -d "submitters[0][email]=john@acme.com"
 
 # PUT request
-docuseal put /templates/1001 -d "name=Updated NDA"
+docuseal put /templates/1001 -d "name=NDA v2"
 
 # DELETE request
 docuseal delete /templates/1001
@@ -334,24 +338,21 @@ These flags work on every command:
 
 | Flag          | Description                                   |
 |---------------|-----------------------------------------------|
-| `-d`, `--data`| Set body params with bracket notation (repeatable) |
 | `--api-key`   | Override API key for this invocation           |
 | `--server`    | Server: `com`, `eu`, or full URL               |
-| `-l`, `--limit` | Limit number of results (on list commands)   |
-| `-a`, `--after` | Cursor for pagination (on list commands)      |
 
-All commands output JSON by default. Pipe to `jq` or other tools:
+Flags available on list commands:
 
-```bash
-# Get all template IDs
-docuseal templates list | jq '.data[].id'
+| Flag            | Description                               |
+|-----------------|-------------------------------------------|
+| `-l`, `--limit` | Limit number of results                   |
+| `-a`, `--after` | Cursor for pagination                     |
 
-# Get submission status
-docuseal submissions retrieve 502 | jq '.status'
+Flag available on commands with body parameters:
 
-# Export submitters to CSV
-docuseal submitters list | jq -r '.data[] | [.id, .email, .status] | @csv'
-```
+| Flag          | Description                                   |
+|---------------|-----------------------------------------------|
+| `-d`, `--data`| Set body params with bracket notation (repeatable) |
 
 ### Override Server Per-Command
 
@@ -426,15 +427,11 @@ DOCUSEAL_API_KEY=your_key npm run dev -- templates list
 npm run dev -- --help
 ```
 
-### Sync OpenAPI Spec
-
-When the DocuSeal API changes, update the local spec:
+### Run Tests
 
 ```bash
-npm run sync-spec
+npm test
 ```
-
-This fetches `https://console.docuseal.com/openapi.yml` and saves it as `openapi-spec.json`. Simple changes (new query params, new endpoints) are picked up automatically — no code changes needed.
 
 ### Install Locally
 
@@ -457,7 +454,7 @@ npm unlink -g @docuseal/cli
 npm run build
 ```
 
-Bundles everything into `dist/index.js` (~25KB) using esbuild. The OpenAPI spec is inlined into the bundle.
+Bundles everything into `dist/index.js` using esbuild.
 
 ### Publish
 
@@ -467,25 +464,13 @@ npm publish --access public
 
 Build runs automatically via `prepublishOnly`.
 
-### Architecture
-
-The CLI is **spec-driven with UX overrides**:
-
-- `openapi-spec.json` — source of truth for all endpoints and parameters
-- `src/generator.ts` — reads the spec, registers commander commands dynamically
-- `src/ux-overrides.ts` — hand-crafted UX layer: custom flags, examples
-- `src/lib/` — HTTP client, config, output helpers
-- `src/commands/` — manually written commands (`configure`, raw HTTP)
-
-When adding support for a new API feature, you typically only need to edit `ux-overrides.ts`.
-
 ---
 
 ## API Documentation
 
-This CLI wraps the [DocuSeal API](https://www.docuseal.com/docs/api). All endpoints and parameters are auto-generated from the OpenAPI spec — every API parameter is available as a CLI flag.
+This CLI wraps the [DocuSeal API](https://www.docuseal.com/docs/api). Every API parameter is available as a CLI flag or `-d` data parameter.
 
-Run `--help` on any command to see all available flags:
+Run `--help` on any command to see all available flags and data parameters:
 
 ```bash
 docuseal templates create-pdf --help

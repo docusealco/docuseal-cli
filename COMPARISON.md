@@ -4,11 +4,9 @@
 
 | | DocuSeal CLI | Stripe CLI |
 |---|---|---|
-| Language | TypeScript (Node.js) | Go |
+| Language | JavaScript (Node.js) | Go |
 | Framework | Commander | Cobra |
-| Spec-driven | Yes, OpenAPI spec at runtime | Yes, OpenAPI spec at build time |
-| Generated code | Dynamic (at startup) | Static (pre-generated `resources_cmds.go`) |
-| UX overrides | `ux-overrides.ts` (custom flags, examples) | Hard-coded in Go files |
+| Commands | Static (hand-written command files) | Static (pre-generated `resources_cmds.go`) |
 | Bundle size | ~24KB (esbuild) | ~25MB (Go binary) |
 | Distribution | npm (`npx @docuseal/cli`) | Homebrew, apt, scoop, Docker, npm |
 
@@ -25,7 +23,7 @@
 | Update | `templates update 1001` | `customers update cus_xxx` |
 | Delete | `templates archive 1001` | `customers delete cus_xxx` |
 | Variants | `templates create-pdf`, `templates create-docx` | N/A |
-| Raw HTTP | `docuseal get /templates`, `docuseal post /templates/pdf` | `stripe get /v1/...`, `stripe post /v1/...` |
+| Raw HTTP | `docuseal get /templates`, `docuseal post /submissions/init` | `stripe get /v1/...`, `stripe post /v1/...` |
 
 **Differences:**
 - DocuSeal uses `archive` for delete, Stripe uses `delete`
@@ -149,7 +147,6 @@ Stripe has significantly more special commands. DocuSeal focuses on CRUD operati
 ## Summary
 
 **What matches Stripe CLI:**
-- Spec-driven architecture with auto-generated commands
 - JSON output by default (no tables)
 - `topic action` command structure with `retrieve` for fetching single resources
 - kebab-case flags derived from snake_case API params
