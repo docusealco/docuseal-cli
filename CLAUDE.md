@@ -41,6 +41,7 @@ docuseal-cli/
     templates.test.js
     submissions.test.js
     submitters.test.js
+    raw.test.js
   package.json
 ```
 
