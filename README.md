@@ -59,10 +59,6 @@ TOPICS
 
 COMMANDS
   configure    Configure API key and server
-  get          Make a raw GET request to the API
-  post         Make a raw POST request to the API
-  put          Make a raw PUT request to the API
-  delete       Make a raw DELETE request to the API
 ```
 
 Every command supports `--help` for full usage details:
@@ -317,27 +313,6 @@ docuseal submitters update 201 --send-email
 
 # Pre-fill fields and metadata
 docuseal submitters update 201 -d "values[First Name]=John" -d "metadata[department]=Sales"
-```
-
----
-
-## Raw HTTP Commands
-
-Make direct API requests:
-
-```bash
-# GET request
-docuseal get /templates
-docuseal get /submissions/1
-
-# POST request with data
-docuseal post /submissions/init -d "template_id=1001" -d "submitters[0][email]=john@acme.com"
-
-# PUT request
-docuseal put /templates/1001 -d "name=NDA v2"
-
-# DELETE request
-docuseal delete /templates/1001
 ```
 
 ---

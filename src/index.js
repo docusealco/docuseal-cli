@@ -4,7 +4,6 @@ import { registerTemplateCommands } from './commands/templates.js'
 import { registerSubmissionCommands } from './commands/submissions.js'
 import { registerSubmitterCommands } from './commands/submitters.js'
 import { registerConfigure } from './commands/configure.js'
-import { registerRawCommands } from './commands/raw.js'
 import { createRequire } from 'module'
 
 const require = createRequire(import.meta.url)
@@ -15,10 +14,9 @@ const program = new Command()
   .description('Manage templates, submissions, and submitters')
   .version(pkg.version)
 
+registerConfigure(program)
 registerTemplateCommands(program)
 registerSubmissionCommands(program)
 registerSubmitterCommands(program)
-registerConfigure(program)
-registerRawCommands(program)
 
 program.parse()

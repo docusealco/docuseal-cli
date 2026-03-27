@@ -8,7 +8,6 @@ Static command files with explicit flags and action handlers. No runtime code ge
 - `src/commands/submissions.js` — all submission commands (list, retrieve, archive, create, send-emails, create-pdf, create-docx, create-html, documents)
 - `src/commands/submitters.js` — all submitter commands (list, retrieve, update)
 - `src/commands/configure.js` — interactive config setup
-- `src/commands/raw.js` — raw HTTP commands (get, post, put, delete)
 - `src/lib/` — HTTP client, config, output helpers, data-flags parser, global options
 
 When the DocuSeal API changes, edit the command files directly.
@@ -30,7 +29,6 @@ docuseal-cli/
       submissions.js         # submission commands
       submitters.js          # submitter commands
       configure.js           # configure command (interactive setup + --list)
-      raw.js                 # raw HTTP commands (get, post, put, delete)
     lib/
       api.js                 # createClient(), onError() — all HTTP goes here
       config.js              # ~/.docuseal/config.json read/write
@@ -41,7 +39,6 @@ docuseal-cli/
     templates.test.js
     submissions.test.js
     submitters.test.js
-    raw.test.js
   package.json
 ```
 
@@ -198,6 +195,4 @@ npm test                             # run all tests
 DOCUSEAL_API_KEY=your_key npm run dev -- --help
 DOCUSEAL_API_KEY=your_key npm run dev -- templates list
 DOCUSEAL_API_KEY=your_key npm run dev -- submissions create --template-id 1 -d "submitters[0][email]=test@example.com"
-DOCUSEAL_API_KEY=your_key npm run dev -- get /templates
-DOCUSEAL_API_KEY=your_key npm run dev -- post /submissions/init -d "template_id=1"
 ```
