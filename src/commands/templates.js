@@ -19,6 +19,7 @@ export function registerTemplateCommands(program) {
     .addOption(new Option('-l, --limit <value>', 'The number of templates to return. Default value is 10. Maximum value is 100.').argParser(parseInt))
     .addOption(new Option('-a, --after <value>', 'The unique identifier of the template to start the list from. It allows you to receive only templates with id greater than the specified value. Pass ID value from the `pagination.next` response to load the next batch of templates.').argParser(parseInt))
     .addOption(new Option('--before <value>', 'The unique identifier of the template to end the list with. It allows you to receive only templates with id less than the specified value.').argParser(parseInt))
+    .option('-d, --data <value>', 'Set parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('afterAll', formatExamples([
       'docuseal templates list',
       'docuseal templates list --folder Legal --limit 50',
@@ -34,6 +35,7 @@ export function registerTemplateCommands(program) {
       if (opts.limit !== undefined) query['limit'] = opts.limit
       if (opts.after !== undefined) query['after'] = opts.after
       if (opts.before !== undefined) query['before'] = opts.before
+      if (opts.data.length > 0) Object.assign(query, parseDataFlags(opts.data))
 
       createClient(opts).listTemplates(query).then(renderJson, onError)
     })
@@ -53,9 +55,9 @@ export function registerTemplateCommands(program) {
     .argument('<id>', 'The id of the resource')
     .addOption(new Option('--name <value>', 'The name of the template'))
     .addOption(new Option('--folder-name <value>', 'The folder\'s name to which the template should be moved.'))
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .option('--archived', 'Archive or unarchive the template.')
     .option('--no-archived', '')
+    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['roles[]', 'Submitter role name'],
     ]))
@@ -87,7 +89,6 @@ export function registerTemplateCommands(program) {
 
   withGlobalOptions(topic.command('create-pdf'))
     .description('Create a template from PDF (Pro)')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--name <value>', 'Name of the template'))
     .addOption(new Option('--folder-name <value>', 'The folder\'s name in which the template should be created.'))
     .addOption(new Option('--external-id <value>', 'Your application-specific unique string key to identify this template within your app. Existing template with specified `external_id` will be updated with a new PDF.'))
@@ -98,6 +99,7 @@ export function registerTemplateCommands(program) {
     .option('--remove-tags', 'Remove {{text}} tags from the PDF (enabled by default).')
     .option('--no-remove-tags', '')
     .addOption(new Option('--file <value>', 'Path to local PDF file').makeOptionMandatory())
+    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['documents[N][name]', 'Document name'],
       ['documents[N][file]', 'Base64-encoded file or URL'],
@@ -140,13 +142,13 @@ export function registerTemplateCommands(program) {
 
   withGlobalOptions(topic.command('create-docx'))
     .description('Create a template from Word DOCX (Pro)')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--name <value>', 'Name of the template'))
     .addOption(new Option('--external-id <value>', 'Your application-specific unique string key to identify this template within your app. Existing template with specified `external_id` will be updated with a new document.'))
     .addOption(new Option('--folder-name <value>', 'The folder\'s name in which the template should be created.'))
     .option('--shared-link', 'Make the template available via a shared link.')
     .option('--no-shared-link', '')
     .addOption(new Option('--file <value>', 'Path to local DOCX file').makeOptionMandatory())
+    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['documents[N][name]', 'Document name'],
       ['documents[N][file]', 'Base64-encoded file or URL'],
@@ -186,7 +188,6 @@ export function registerTemplateCommands(program) {
 
   withGlobalOptions(topic.command('create-html'))
     .description('Create a template from HTML (Pro)')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--html <value>', 'HTML template with field tags.'))
     .addOption(new Option('--html-header <value>', 'HTML template of the header to be displayed on every page.'))
     .addOption(new Option('--html-footer <value>', 'HTML template of the footer to be displayed on every page.'))
@@ -197,6 +198,7 @@ export function registerTemplateCommands(program) {
     .option('--shared-link', 'Make the template available via a shared link.')
     .option('--no-shared-link', '')
     .addOption(new Option('--html-file <value>', 'Path to local HTML file (alternative to --html)'))
+    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['documents[N][html]', 'HTML template with field tags'],
       ['documents[N][name]', 'Document name'],
@@ -228,6 +230,7 @@ export function registerTemplateCommands(program) {
     .addOption(new Option('--name <value>', 'Template name. Existing name with (Clone) suffix will be used if not specified.'))
     .addOption(new Option('--folder-name <value>', 'The folder\'s name to which the template should be cloned.'))
     .addOption(new Option('--external-id <value>', 'Your application-specific unique string key to identify this template within your app.'))
+    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('afterAll', formatExamples([
       'docuseal templates clone 1001',
       'docuseal templates clone 1001 --name "NDA Copy"',
@@ -237,18 +240,19 @@ export function registerTemplateCommands(program) {
       if (opts.name !== undefined) body['name'] = opts.name
       if (opts.folderName !== undefined) body['folder_name'] = opts.folderName
       if (opts.externalId !== undefined) body['external_id'] = opts.externalId
+      if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
       createClient(opts).cloneTemplate(id, body).then(renderJson, onError)
     })
 
   withGlobalOptions(topic.command('merge'))
     .description('Merge templates (Pro)')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--name <value>', 'Template name. Existing name with (Merged) suffix will be used if not specified.'))
     .addOption(new Option('--folder-name <value>', 'The name of the folder in which the merged template should be placed.'))
     .addOption(new Option('--external-id <value>', 'Your application-specific unique string key to identify this template within your app.'))
     .option('--shared-link', 'Make the template available via a shared link.')
     .option('--no-shared-link', '')
+    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['template_ids[]', 'Template ID to merge (required)'],
       ['roles[]', 'Submitter role name'],
@@ -271,9 +275,9 @@ export function registerTemplateCommands(program) {
   withGlobalOptions(topic.command('update-documents'))
     .description('Update template documents (Pro)')
     .argument('<id>', 'The id of the resource')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .option('--merge', 'Merge all existing and new documents into a single PDF.')
     .option('--no-merge', '')
+    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['documents[N][name]', 'Document name'],
       ['documents[N][file]', 'Base64-encoded PDF/DOCX or URL'],

@@ -33,7 +33,7 @@ docuseal-cli/
       raw.js                 # raw HTTP commands (get, post, put, delete)
     lib/
       api.js                 # createClient(), onError() — all HTTP goes here
-      config.js              # ~/.docuseal/config.yml read/write
+      config.js              # ~/.docuseal/config.json read/write
       output.js              # renderJson
       data-flags.js          # parseDataFlags(), deepMerge(), coerce()
       global-options.js      # withGlobalOptions(), formatDataParams(), formatExamples()
@@ -51,7 +51,7 @@ docuseal-cli/
 - Runtime: Node.js (ESM)
 - CLI framework: commander
 - HTTP: `@docuseal/api` package
-- Config: yaml (read/write ~/.docuseal/config.yml)
+- Config: JSON (read/write ~/.docuseal/config.json)
 - Bundling: esbuild
 
 ---
@@ -149,15 +149,15 @@ Mapping rules:
 - `-l` / `--limit` — limit number of results
 - `-a` / `--after` — cursor for pagination
 
-## Data Flag (on commands with body params)
+## Data Flag (on all commands)
 
-- `-d` / `--data` — set body params with bracket notation, repeatable
+- `-d` / `--data` — set parameters with bracket notation, repeatable (query params for GET, body params for POST/PUT)
 
 ---
 
 ## Config
 
-File: `~/.docuseal/config.yml`
+File: `~/.docuseal/config.json`
 Fields: `apiKey`, `server`
 Env var overrides: `DOCUSEAL_API_KEY`, `DOCUSEAL_SERVER`
 Priority: CLI flag > env var > config file

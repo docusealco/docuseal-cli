@@ -20,6 +20,7 @@ export function registerSubmissionCommands(program) {
     .addOption(new Option('-l, --limit <value>', 'The number of submissions to return. Default value is 10. Maximum value is 100.').argParser(parseInt))
     .addOption(new Option('-a, --after <value>', 'The unique identifier of the submission to start the list from. It allows you to receive only submissions with an ID greater than the specified value. Pass ID value from the `pagination.next` response to load the next batch of submissions.').argParser(parseInt))
     .addOption(new Option('--before <value>', 'The unique identifier of the submission that marks the end of the list. It allows you to receive only submissions with an ID less than the specified value.').argParser(parseInt))
+    .option('-d, --data <value>', 'Set parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('afterAll', formatExamples([
       'docuseal submissions list',
       'docuseal submissions list --status pending',
@@ -36,6 +37,7 @@ export function registerSubmissionCommands(program) {
       if (opts.limit !== undefined) query['limit'] = opts.limit
       if (opts.after !== undefined) query['after'] = opts.after
       if (opts.before !== undefined) query['before'] = opts.before
+      if (opts.data.length > 0) Object.assign(query, parseDataFlags(opts.data))
 
       createClient(opts).listSubmissions(query).then(renderJson, onError)
     })
@@ -62,7 +64,6 @@ export function registerSubmissionCommands(program) {
 
   withGlobalOptions(topic.command('create'))
     .description('Create a submission')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--template-id <value>', 'The unique identifier of the template.').argParser(parseInt).makeOptionMandatory())
     .option('--send-email', 'Send signature request emails (enabled by default).')
     .option('--no-send-email', '')
@@ -73,6 +74,7 @@ export function registerSubmissionCommands(program) {
     .addOption(new Option('--bcc-completed <value>', 'Specify BCC address to send signed documents to after the completion.'))
     .addOption(new Option('--reply-to <value>', 'Specify Reply-To address to use in the notification emails.'))
     .addOption(new Option('--expire-at <value>', 'Specify the expiration date and time after which the submission becomes unavailable for signature.'))
+    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['submitters[N][email]', 'Email address (required)'],
       ['submitters[N][role]', 'Role name (e.g. "First Party")'],
@@ -125,11 +127,11 @@ export function registerSubmissionCommands(program) {
 
   withGlobalOptions(topic.command('send-emails'))
     .description('Create submissions from emails')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--template-id <value>', 'The unique identifier of the template.').argParser(parseInt).makeOptionMandatory())
     .addOption(new Option('--emails <value>', 'A comma-separated list of email addresses to send the submission to.').makeOptionMandatory())
     .option('--send-email', 'Send signature request emails (enabled by default).')
     .option('--no-send-email', '')
+    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['message[subject]', 'Custom email subject'],
       ['message[body]', 'Custom email body'],
@@ -150,7 +152,6 @@ export function registerSubmissionCommands(program) {
 
   withGlobalOptions(topic.command('create-pdf'))
     .description('Create a submission from PDF (Pro)')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--name <value>', 'Name of the document submission.'))
     .option('--send-email', 'Send signature request emails (enabled by default).')
     .option('--no-send-email', '')
@@ -168,6 +169,7 @@ export function registerSubmissionCommands(program) {
     .option('--remove-tags', 'Remove {{text}} tags from the PDF (enabled by default).')
     .option('--no-remove-tags', '')
     .addOption(new Option('--file <value>', 'Path to local PDF file').makeOptionMandatory())
+    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['submitters[N][email]', 'Email address (required)'],
       ['submitters[N][role]', 'Role name'],
@@ -216,7 +218,6 @@ export function registerSubmissionCommands(program) {
 
   withGlobalOptions(topic.command('create-docx'))
     .description('Create a submission from DOCX (Pro)')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--name <value>', 'Name of the document submission.'))
     .option('--send-email', 'Send signature request emails (enabled by default).')
     .option('--no-send-email', '')
@@ -232,6 +233,7 @@ export function registerSubmissionCommands(program) {
     .option('--remove-tags', 'Remove {{text}} tags from the PDF (enabled by default).')
     .option('--no-remove-tags', '')
     .addOption(new Option('--file <value>', 'Path to local DOCX file').makeOptionMandatory())
+    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['submitters[N][email]', 'Email address (required)'],
       ['submitters[N][role]', 'Role name'],
@@ -280,7 +282,6 @@ export function registerSubmissionCommands(program) {
 
   withGlobalOptions(topic.command('create-html'))
     .description('Create a submission from HTML (Pro)')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--name <value>', 'Name of the document submission'))
     .option('--send-email', 'Send signature request emails (enabled by default).')
     .option('--no-send-email', '')
@@ -294,6 +295,7 @@ export function registerSubmissionCommands(program) {
     .option('--merge-documents', 'Merge documents into a single PDF file.')
     .option('--no-merge-documents', '')
     .addOption(new Option('--html-file <value>', 'Path to local HTML file'))
+    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['submitters[N][email]', 'Email address (required)'],
       ['submitters[N][role]', 'Role name'],
@@ -342,6 +344,7 @@ export function registerSubmissionCommands(program) {
     .argument('<id>', 'The id of the resource')
     .option('--merge', 'Merge all documents into a single PDF.')
     .option('--no-merge', '')
+    .option('-d, --data <value>', 'Set parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('afterAll', formatExamples([
       'docuseal submissions documents 502',
       'docuseal submissions documents 502 --merge',
@@ -349,6 +352,7 @@ export function registerSubmissionCommands(program) {
     .action(async (id, opts) => {
       const query = {}
       if (opts.merge !== undefined) query['merge'] = opts.merge
+      if (opts.data.length > 0) Object.assign(query, parseDataFlags(opts.data))
 
       createClient(opts).getSubmissionDocuments(id, query).then(renderJson, onError)
     })

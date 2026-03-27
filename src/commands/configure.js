@@ -21,8 +21,7 @@ export function registerConfigure(program) {
         try {
           const config = loadConfig()
           const masked = config.apiKey.slice(0, 8) + '...' + config.apiKey.slice(-4)
-          console.log(`api_key: ${masked}`)
-          console.log(`server: ${config.server}`)
+          renderSuccess('Current configuration', { api_key: masked, server: config.server })
         } catch (err) {
           renderError(err.message)
           process.exit(1)
@@ -60,6 +59,6 @@ export function registerConfigure(program) {
       }
 
       saveConfig({ apiKey, server: resolvedServer })
-      renderSuccess('Saved to ~/.docuseal/config.yml')
+      renderSuccess('Saved to ~/.docuseal/config.json')
     })
 }

@@ -18,6 +18,7 @@ export function registerSubmitterCommands(program) {
     .addOption(new Option('-l, --limit <value>', 'The number of submitters to return. Default value is 10. Maximum value is 100.').argParser(parseInt))
     .addOption(new Option('-a, --after <value>', 'The unique identifier of the submitter to start the list from. It allows you to receive only submitters with id greater than the specified value. Pass ID value from the `pagination.next` response to load the next batch of submitters.').argParser(parseInt))
     .addOption(new Option('--before <value>', 'The unique identifier of the submitter to end the list with. It allows you to receive only submitters with id less than the specified value.').argParser(parseInt))
+    .option('-d, --data <value>', 'Set parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('afterAll', formatExamples([
       'docuseal submitters list',
       'docuseal submitters list --submission-id 502',
@@ -33,6 +34,7 @@ export function registerSubmitterCommands(program) {
       if (opts.limit !== undefined) query['limit'] = opts.limit
       if (opts.after !== undefined) query['after'] = opts.after
       if (opts.before !== undefined) query['before'] = opts.before
+      if (opts.data.length > 0) Object.assign(query, parseDataFlags(opts.data))
 
       createClient(opts).listSubmitters(query).then(renderJson, onError)
     })
@@ -50,7 +52,6 @@ export function registerSubmitterCommands(program) {
   withGlobalOptions(topic.command('update'))
     .description('Update a submitter')
     .argument('<id>', 'The id of the resource')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addOption(new Option('--name <value>', 'The name of the submitter.'))
     .addOption(new Option('--email <value>', 'The email address of the submitter.'))
     .addOption(new Option('--phone <value>', 'The phone number of the submitter, formatted according to the E.164 standard.'))
@@ -67,6 +68,7 @@ export function registerSubmitterCommands(program) {
     .option('--no-require-phone-2fa', '')
     .option('--require-email-2fa', 'Require email 2FA verification via one-time code.')
     .option('--no-require-email-2fa', '')
+    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['values[fieldName]', 'Pre-filled field value'],
       ['metadata[key]', 'Submitter metadata'],

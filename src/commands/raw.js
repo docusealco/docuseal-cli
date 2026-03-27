@@ -1,16 +1,7 @@
 import { createClient, onError } from '../lib/api.js'
 import { renderJson } from '../lib/output.js'
+import { parseDataFlags } from '../lib/data-flags.js'
 import { withGlobalOptions, formatExamples } from '../lib/global-options.js'
-
-function parseDataFlags(pairs) {
-  const result = {}
-  for (const pair of pairs) {
-    const eqIdx = pair.indexOf('=')
-    if (eqIdx === -1) continue
-    result[pair.slice(0, eqIdx)] = pair.slice(eqIdx + 1)
-  }
-  return result
-}
 
 function registerRawCommand(program, name, method, examples) {
   withGlobalOptions(program.command(name))

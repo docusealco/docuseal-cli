@@ -63,7 +63,7 @@ No major differences. Flag conventions are nearly identical.
 | Setup command | `docuseal configure` | `stripe login` |
 | Interactive | Prompts for server, then API key | Opens browser for pairing code |
 | Non-interactive | `--api-key KEY --server com` | `stripe login --interactive` (paste key) |
-| Config file | `~/.docuseal/config.yml` (YAML) | `~/.config/stripe/config.toml` (TOML) |
+| Config file | `~/.docuseal/config.json` (JSON) | `~/.config/stripe/config.toml` (TOML) |
 | Env var | `DOCUSEAL_API_KEY` | `STRIPE_API_KEY` |
 | Priority | Flag > env var > config file | Flag > env var > config file |
 | Validation | Calls API to verify key | Calls API to verify key |

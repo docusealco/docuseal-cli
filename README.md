@@ -34,7 +34,7 @@ The `configure` command will prompt for your API token and server:
 ```
 Server [com/eu/url] (default: com): com
 Enter your API token: xxxxxxxxxx
-✓ Saved to ~/.docuseal/config.yml
+✓ Saved to ~/.docuseal/config.json
 ```
 
 Get your API token from [DocuSeal Console](https://console.docuseal.com/api) or [DocuSeal EU Console](https://console.docuseal.eu/api).
@@ -91,8 +91,9 @@ docuseal configure --api-key YOUR_KEY --server com
 
 ```bash
 docuseal configure --list
-# api_key: vS7EwXPy...kDmq
-# server: https://api.docuseal.com
+# ✓ Current configuration
+#   api_key: vS7EwXPy...kDmq
+#   server: https://api.docuseal.com
 ```
 
 ### Environment Variables
@@ -104,11 +105,13 @@ export DOCUSEAL_SERVER=com       # com, eu, or full URL
 
 ### Config File
 
-Stored at `~/.docuseal/config.yml`:
+Stored at `~/.docuseal/config.json`:
 
-```yaml
-apiKey: your_key
-server: https://api.docuseal.com
+```json
+{
+  "apiKey": "your_key",
+  "server": "https://api.docuseal.com"
+}
 ```
 
 **Priority:** CLI flag > environment variable > config file.
