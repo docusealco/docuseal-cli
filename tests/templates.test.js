@@ -142,6 +142,14 @@ describe('templates update', () => {
     await cli('templates', 'update', '1001', '-d', 'name=Custom')
     assert.equal(lastRequest.body.name, 'Custom')
   })
+
+  test('-d roles[]', async () => {
+    await cli('templates', 'update', '1001',
+      '-d', 'roles[]=Signer',
+      '-d', 'roles[]=Reviewer'
+    )
+    assert.deepEqual(lastRequest.body, { roles: ['Signer', 'Reviewer'] })
+  })
 })
 
 // --- templates archive ---
@@ -198,6 +206,34 @@ describe('templates create-pdf', () => {
     await cli('templates', 'create-pdf', '--file', tmpFile, '--no-shared-link')
     assert.equal(lastRequest.body.shared_link, false)
   })
+
+  test('-d documents with fields and areas', async () => {
+    const b64 = Buffer.from('fake-pdf').toString('base64')
+    await cli('templates', 'create-pdf', '--file', tmpFile, '--name', 'NDA',
+      '-d', 'documents[0][fields][0][name]=Name',
+      '-d', 'documents[0][fields][0][type]=text',
+      '-d', 'documents[0][fields][0][role]=Signer',
+      '-d', 'documents[0][fields][0][required]=true',
+      '-d', 'documents[0][fields][1][name]=Signature',
+      '-d', 'documents[0][fields][1][type]=signature',
+      '-d', 'documents[0][fields][1][areas][0][x]=0.1',
+      '-d', 'documents[0][fields][1][areas][0][y]=0.5',
+      '-d', 'documents[0][fields][1][areas][0][w]=0.3',
+      '-d', 'documents[0][fields][1][areas][0][h]=0.05',
+      '-d', 'documents[0][fields][1][areas][0][page]=1'
+    )
+    assert.deepEqual(lastRequest.body, {
+      name: 'NDA',
+      documents: [{
+        name: 'docuseal-tpl-test.pdf',
+        file: `data:application/octet-stream;base64,${b64}`,
+        fields: [
+          { name: 'Name', type: 'text', role: 'Signer', required: true },
+          { name: 'Signature', type: 'signature', areas: [{ x: 0.1, y: 0.5, w: 0.3, h: 0.05, page: 1 }] },
+        ],
+      }],
+    })
+  })
 })
 
 // --- templates create-docx ---
@@ -234,6 +270,34 @@ describe('templates create-docx', () => {
   test('--shared-link', async () => {
     await cli('templates', 'create-docx', '--file', tmpFile, '--shared-link')
     assert.equal(lastRequest.body.shared_link, true)
+  })
+
+  test('-d documents with fields and areas', async () => {
+    const b64 = Buffer.from('fake-docx').toString('base64')
+    await cli('templates', 'create-docx', '--file', tmpFile, '--name', 'Contract',
+      '-d', 'documents[0][fields][0][name]=Date',
+      '-d', 'documents[0][fields][0][type]=date',
+      '-d', 'documents[0][fields][0][role]=Signer',
+      '-d', 'documents[0][fields][0][required]=true',
+      '-d', 'documents[0][fields][1][name]=Signature',
+      '-d', 'documents[0][fields][1][type]=signature',
+      '-d', 'documents[0][fields][1][areas][0][x]=0.2',
+      '-d', 'documents[0][fields][1][areas][0][y]=0.8',
+      '-d', 'documents[0][fields][1][areas][0][w]=0.3',
+      '-d', 'documents[0][fields][1][areas][0][h]=0.05',
+      '-d', 'documents[0][fields][1][areas][0][page]=2'
+    )
+    assert.deepEqual(lastRequest.body, {
+      name: 'Contract',
+      documents: [{
+        name: 'docuseal-tpl-test.docx',
+        file: `data:application/octet-stream;base64,${b64}`,
+        fields: [
+          { name: 'Date', type: 'date', role: 'Signer', required: true },
+          { name: 'Signature', type: 'signature', areas: [{ x: 0.2, y: 0.8, w: 0.3, h: 0.05, page: 2 }] },
+        ],
+      }],
+    })
   })
 })
 
@@ -290,6 +354,23 @@ describe('templates create-html', () => {
   test('--shared-link', async () => {
     await cli('templates', 'create-html', '--html', '<p>x</p>', '--shared-link')
     assert.equal(lastRequest.body.shared_link, true)
+  })
+
+  test('-d documents with html', async () => {
+    await cli('templates', 'create-html', '--name', 'Multi-page', '--folder-name', 'Legal',
+      '-d', 'documents[0][html]=<p>{{name}}</p>',
+      '-d', 'documents[0][name]=Page 1',
+      '-d', 'documents[1][html]=<p>{{signature}}</p>',
+      '-d', 'documents[1][name]=Page 2'
+    )
+    assert.deepEqual(lastRequest.body, {
+      name: 'Multi-page',
+      folder_name: 'Legal',
+      documents: [
+        { html: '<p>{{name}}</p>', name: 'Page 1' },
+        { html: '<p>{{signature}}</p>', name: 'Page 2' },
+      ],
+    })
   })
 })
 
@@ -366,5 +447,22 @@ describe('templates update-documents', () => {
   test('--no-merge', async () => {
     await cli('templates', 'update-documents', '1001', '--no-merge')
     assert.equal(lastRequest.body.merge, false)
+  })
+
+  test('-d documents with --merge', async () => {
+    await cli('templates', 'update-documents', '1001', '--merge',
+      '-d', 'documents[0][file]=https://example.com/doc.pdf',
+      '-d', 'documents[0][name]=New Doc',
+      '-d', 'documents[1][html]=<p>Page 2</p>',
+      '-d', 'documents[1][name]=HTML Page',
+      '-d', 'documents[1][position]=1'
+    )
+    assert.deepEqual(lastRequest.body, {
+      merge: true,
+      documents: [
+        { file: 'https://example.com/doc.pdf', name: 'New Doc' },
+        { html: '<p>Page 2</p>', name: 'HTML Page', position: 1 },
+      ],
+    })
   })
 })

@@ -314,6 +314,36 @@ describe('submissions create', () => {
       { name: 'First Name', default_value: 'John' },
     ])
   })
+
+  test('-d submitters with values, metadata, fields, message, variables', async () => {
+    await cli('submissions', 'create', '--template-id', '1', '--order', 'random',
+      '-d', 'submitters[0][email]=a@b.com',
+      '-d', 'submitters[0][role]=Signer',
+      '-d', 'submitters[0][values][First Name]=John',
+      '-d', 'submitters[0][values][Last Name]=Doe',
+      '-d', 'submitters[0][metadata][department]=Sales',
+      '-d', 'submitters[0][metadata][id]=123',
+      '-d', 'submitters[0][fields][0][name]=First Name',
+      '-d', 'submitters[0][fields][0][default_value]=John',
+      '-d', 'submitters[0][fields][0][readonly]=true',
+      '-d', 'message[subject]=Please sign',
+      '-d', 'message[body]=Hello',
+      '-d', 'variables[company]=Acme'
+    )
+    assert.deepEqual(lastRequest.body, {
+      template_id: 1,
+      order: 'random',
+      submitters: [{
+        email: 'a@b.com',
+        role: 'Signer',
+        values: { 'First Name': 'John', 'Last Name': 'Doe' },
+        metadata: { department: 'Sales', id: 123 },
+        fields: [{ name: 'First Name', default_value: 'John', readonly: true }],
+      }],
+      message: { subject: 'Please sign', body: 'Hello' },
+      variables: { company: 'Acme' },
+    })
+  })
 })
 
 // --- submissions send-emails ---
@@ -330,6 +360,18 @@ describe('submissions send-emails', () => {
   test('--no-send-email', async () => {
     await cli('submissions', 'send-emails', '--template-id', '1', '--emails', 'a@b.com', '--no-send-email')
     assert.equal(lastRequest.body.send_email, false)
+  })
+
+  test('-d message', async () => {
+    await cli('submissions', 'send-emails', '--template-id', '1', '--emails', 'a@b.com',
+      '-d', 'message[subject]=Please sign',
+      '-d', 'message[body]=Hello, please sign this document'
+    )
+    assert.deepEqual(lastRequest.body, {
+      template_id: 1,
+      emails: 'a@b.com',
+      message: { subject: 'Please sign', body: 'Hello, please sign this document' },
+    })
   })
 })
 
@@ -368,6 +410,32 @@ describe('submissions create-pdf', () => {
     assert.equal(lastRequest.body.merge_documents, true)
     assert.equal(lastRequest.body.remove_tags, false)
   })
+
+  test('-d submitters with roles, values, metadata, message', async () => {
+    const b64 = Buffer.from('fake-pdf').toString('base64')
+    await cli('submissions', 'create-pdf', '--file', tmpFile, '--name', 'My Doc',
+      '-d', 'submitters[0][email]=a@b.com',
+      '-d', 'submitters[0][role]=Signer',
+      '-d', 'submitters[0][values][First Name]=John',
+      '-d', 'submitters[0][metadata][dept]=Sales',
+      '-d', 'submitters[1][email]=c@d.com',
+      '-d', 'submitters[1][role]=Witness',
+      '-d', 'message[subject]=Sign this',
+      '-d', 'message[body]=Please review and sign'
+    )
+    assert.deepEqual(lastRequest.body, {
+      name: 'My Doc',
+      documents: [{
+        name: 'docuseal-test.pdf',
+        file: `data:application/octet-stream;base64,${b64}`,
+      }],
+      submitters: [
+        { email: 'a@b.com', role: 'Signer', values: { 'First Name': 'John' }, metadata: { dept: 'Sales' } },
+        { email: 'c@d.com', role: 'Witness' },
+      ],
+      message: { subject: 'Sign this', body: 'Please review and sign' },
+    })
+  })
 })
 
 // --- submissions create-docx ---
@@ -398,6 +466,35 @@ describe('submissions create-docx', () => {
     assert.equal(lastRequest.body.merge_documents, true)
     assert.equal(lastRequest.body.remove_tags, false)
   })
+
+  test('-d submitters with fields, values, metadata, message', async () => {
+    const b64 = Buffer.from('fake-docx').toString('base64')
+    await cli('submissions', 'create-docx', '--file', tmpFile,
+      '-d', 'submitters[0][email]=a@b.com',
+      '-d', 'submitters[0][role]=Signer',
+      '-d', 'submitters[0][fields][0][name]=First Name',
+      '-d', 'submitters[0][fields][0][default_value]=John',
+      '-d', 'submitters[0][fields][0][readonly]=true',
+      '-d', 'submitters[0][values][Company]=Acme',
+      '-d', 'submitters[0][metadata][dept]=Sales',
+      '-d', 'message[subject]=Please sign',
+      '-d', 'message[body]=Review and sign'
+    )
+    assert.deepEqual(lastRequest.body, {
+      documents: [{
+        name: 'docuseal-test.docx',
+        file: `data:application/octet-stream;base64,${b64}`,
+      }],
+      submitters: [{
+        email: 'a@b.com',
+        role: 'Signer',
+        fields: [{ name: 'First Name', default_value: 'John', readonly: true }],
+        values: { Company: 'Acme' },
+        metadata: { dept: 'Sales' },
+      }],
+      message: { subject: 'Please sign', body: 'Review and sign' },
+    })
+  })
 })
 
 // --- submissions create-html ---
@@ -418,6 +515,24 @@ describe('submissions create-html', () => {
     assert.equal(lastRequest.path, '/submissions/html')
     assert.equal(lastRequest.body.html, '<p>{{name}}</p>')
     assert.deepEqual(lastRequest.body.submitters, [{ email: 'a@b.com' }])
+  })
+
+  test('-d documents, submitters, message', async () => {
+    await cli('submissions', 'create-html', '--name', 'HTML Sub',
+      '-d', 'documents[0][html]=<p>{{name}}</p>',
+      '-d', 'documents[0][name]=Page 1',
+      '-d', 'submitters[0][email]=a@b.com',
+      '-d', 'submitters[0][role]=Signer',
+      '-d', 'submitters[0][values][Name]=John',
+      '-d', 'message[subject]=Sign please',
+      '-d', 'message[body]=Hello'
+    )
+    assert.deepEqual(lastRequest.body, {
+      name: 'HTML Sub',
+      documents: [{ html: '<p>{{name}}</p>', name: 'Page 1' }],
+      submitters: [{ email: 'a@b.com', role: 'Signer', values: { Name: 'John' } }],
+      message: { subject: 'Sign please', body: 'Hello' },
+    })
   })
 })
 

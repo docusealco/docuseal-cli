@@ -208,4 +208,51 @@ describe('submitters update', () => {
     await cli('submitters', 'update', '201', '-d', 'metadata[key]=value')
     assert.deepEqual(lastRequest.body.metadata, { key: 'value' })
   })
+
+  test('-d values, fields, message', async () => {
+    await cli('submitters', 'update', '201',
+      '-d', 'values[First Name]=John',
+      '-d', 'values[Last Name]=Doe',
+      '-d', 'fields[0][name]=First Name',
+      '-d', 'fields[0][default_value]=John',
+      '-d', 'fields[0][readonly]=true',
+      '-d', 'fields[1][name]=Email',
+      '-d', 'fields[1][required]=true',
+      '-d', 'message[subject]=Please sign',
+      '-d', 'message[body]=Hello, please sign this'
+    )
+    assert.deepEqual(lastRequest.body, {
+      values: { 'First Name': 'John', 'Last Name': 'Doe' },
+      fields: [
+        { name: 'First Name', default_value: 'John', readonly: true },
+        { name: 'Email', required: true },
+      ],
+      message: { subject: 'Please sign', body: 'Hello, please sign this' },
+    })
+  })
+
+  test('flags + -d combined', async () => {
+    await cli('submitters', 'update', '201',
+      '--name', 'Jane Doe',
+      '--email', 'jane@acme.com',
+      '--completed',
+      '--send-email',
+      '-d', 'values[Name]=Jane',
+      '-d', 'metadata[dept]=HR',
+      '-d', 'fields[0][name]=Name',
+      '-d', 'fields[0][readonly]=true',
+      '-d', 'message[subject]=Updated',
+      '-d', 'message[body]=Please review'
+    )
+    assert.deepEqual(lastRequest.body, {
+      name: 'Jane Doe',
+      email: 'jane@acme.com',
+      completed: true,
+      send_email: true,
+      values: { Name: 'Jane' },
+      metadata: { dept: 'HR' },
+      fields: [{ name: 'Name', readonly: true }],
+      message: { subject: 'Updated', body: 'Please review' },
+    })
+  })
 })
