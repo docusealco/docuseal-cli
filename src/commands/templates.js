@@ -42,7 +42,7 @@ export function registerTemplateCommands(program) {
 
   withGlobalOptions(topic.command('retrieve'))
     .description('Get a template')
-    .argument('<id>', 'The id of the resource')
+    .argument('<id>', 'The id of the template')
     .addHelpText('afterAll', formatExamples([
       'docuseal templates retrieve 1001',
     ]))
@@ -52,7 +52,7 @@ export function registerTemplateCommands(program) {
 
   withGlobalOptions(topic.command('update'))
     .description('Update a template')
-    .argument('<id>', 'The id of the resource')
+    .argument('<id>', 'The id of the template')
     .addOption(new Option('--name <value>', 'The name of the template'))
     .addOption(new Option('--folder-name <value>', 'The folder\'s name to which the template should be moved.'))
     .option('--archived', 'Archive or unarchive the template.')
@@ -79,7 +79,7 @@ export function registerTemplateCommands(program) {
 
   withGlobalOptions(topic.command('archive'))
     .description('Archive a template')
-    .argument('<id>', 'The id of the resource')
+    .argument('<id>', 'The id of the template')
     .addHelpText('afterAll', formatExamples([
       'docuseal templates archive 1001',
     ]))
@@ -226,7 +226,7 @@ export function registerTemplateCommands(program) {
 
   withGlobalOptions(topic.command('clone'))
     .description('Clone a template')
-    .argument('<id>', 'The id of the resource')
+    .argument('<id>', 'The id of the template')
     .addOption(new Option('--name <value>', 'Template name. Existing name with (Clone) suffix will be used if not specified.'))
     .addOption(new Option('--folder-name <value>', 'The folder\'s name to which the template should be cloned.'))
     .addOption(new Option('--external-id <value>', 'Your application-specific unique string key to identify this template within your app.'))
@@ -274,7 +274,7 @@ export function registerTemplateCommands(program) {
 
   withGlobalOptions(topic.command('update-documents'))
     .description('Update template documents (Pro)')
-    .argument('<id>', 'The id of the resource')
+    .argument('<id>', 'The id of the template')
     .option('--merge', 'Merge all existing and new documents into a single PDF.')
     .option('--no-merge', '')
     .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])

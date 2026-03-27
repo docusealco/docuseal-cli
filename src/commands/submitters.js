@@ -41,7 +41,7 @@ export function registerSubmitterCommands(program) {
 
   withGlobalOptions(topic.command('retrieve'))
     .description('Get a submitter')
-    .argument('<id>', 'The id of the resource')
+    .argument('<id>', 'The id of the submitter')
     .addHelpText('afterAll', formatExamples([
       'docuseal submitters retrieve 201',
     ]))
@@ -51,7 +51,7 @@ export function registerSubmitterCommands(program) {
 
   withGlobalOptions(topic.command('update'))
     .description('Update a submitter')
-    .argument('<id>', 'The id of the resource')
+    .argument('<id>', 'The id of the submitter')
     .addOption(new Option('--name <value>', 'The name of the submitter.'))
     .addOption(new Option('--email <value>', 'The email address of the submitter.'))
     .addOption(new Option('--phone <value>', 'The phone number of the submitter, formatted according to the E.164 standard.'))

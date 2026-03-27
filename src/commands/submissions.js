@@ -44,7 +44,7 @@ export function registerSubmissionCommands(program) {
 
   withGlobalOptions(topic.command('retrieve'))
     .description('Get a submission')
-    .argument('<id>', 'The id of the resource')
+    .argument('<id>', 'The id of the submission')
     .addHelpText('afterAll', formatExamples([
       'docuseal submissions retrieve 502',
     ]))
@@ -54,7 +54,7 @@ export function registerSubmissionCommands(program) {
 
   withGlobalOptions(topic.command('archive'))
     .description('Archive a submission')
-    .argument('<id>', 'The id of the resource')
+    .argument('<id>', 'The id of the submission')
     .addHelpText('afterAll', formatExamples([
       'docuseal submissions archive 502',
     ]))
@@ -341,7 +341,7 @@ export function registerSubmissionCommands(program) {
 
   withGlobalOptions(topic.command('documents'))
     .description('Get submission documents')
-    .argument('<id>', 'The id of the resource')
+    .argument('<id>', 'The id of the submission')
     .option('--merge', 'Merge all documents into a single PDF.')
     .option('--no-merge', '')
     .option('-d, --data <value>', 'Set parameters using bracket notation', (val, prev) => prev.concat([val]), [])
