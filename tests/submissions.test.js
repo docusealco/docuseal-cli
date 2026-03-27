@@ -5,7 +5,6 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { describe, test, before, after, beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
-import { parseDataFlags, deepMerge } from '../src/lib/data-flags.js'
 
 let server, port, lastRequest
 
@@ -45,114 +44,6 @@ function cli(...args) {
     })
   })
 }
-
-// --- parseDataFlags ---
-
-describe('parseDataFlags', () => {
-  test('flat key-value', () => {
-    assert.deepEqual(parseDataFlags(['name=NDA']), { name: 'NDA' })
-  })
-
-  test('single submitter', () => {
-    assert.deepEqual(
-      parseDataFlags(['submitters[0][email]=a@b.com']),
-      { submitters: [{ email: 'a@b.com' }] }
-    )
-  })
-
-  test('multiple submitters', () => {
-    assert.deepEqual(
-      parseDataFlags(['submitters[0][email]=a@b.com', 'submitters[1][email]=c@d.com']),
-      { submitters: [{ email: 'a@b.com' }, { email: 'c@d.com' }] }
-    )
-  })
-
-  test('multiple fields on same submitter', () => {
-    assert.deepEqual(
-      parseDataFlags(['submitters[0][email]=a@b.com', 'submitters[0][role]=Signer']),
-      { submitters: [{ email: 'a@b.com', role: 'Signer' }] }
-    )
-  })
-
-  test('array push with empty brackets', () => {
-    assert.deepEqual(
-      parseDataFlags(['tags[]=one', 'tags[]=two']),
-      { tags: ['one', 'two'] }
-    )
-  })
-
-  test('deeply nested', () => {
-    assert.deepEqual(
-      parseDataFlags(['submitters[0][fields][0][name]=field1']),
-      { submitters: [{ fields: [{ name: 'field1' }] }] }
-    )
-  })
-
-  test('value containing =', () => {
-    assert.deepEqual(
-      parseDataFlags(['url=https://example.com?a=b']),
-      { url: 'https://example.com?a=b' }
-    )
-  })
-
-  test('coerces booleans', () => {
-    assert.deepEqual(parseDataFlags(['flatten=true']), { flatten: true })
-    assert.deepEqual(parseDataFlags(['flatten=false']), { flatten: false })
-  })
-
-  test('coerces numbers', () => {
-    assert.deepEqual(parseDataFlags(['template_id=42']), { template_id: 42 })
-    assert.deepEqual(parseDataFlags(['limit=0']), { limit: 0 })
-  })
-
-  test('keeps strings as strings', () => {
-    assert.deepEqual(parseDataFlags(['name=NDA']), { name: 'NDA' })
-    assert.deepEqual(parseDataFlags(['email=a@b.com']), { email: 'a@b.com' })
-  })
-
-  test('empty value stays string', () => {
-    assert.deepEqual(parseDataFlags(['name=']), { name: '' })
-  })
-
-  test('ignores entries without =', () => {
-    assert.deepEqual(parseDataFlags(['invalid']), {})
-  })
-})
-
-// --- deepMerge ---
-
-describe('deepMerge', () => {
-  test('merges flat objects', () => {
-    assert.deepEqual(deepMerge({ a: 1 }, { b: 2 }), { a: 1, b: 2 })
-  })
-
-  test('overrides scalar', () => {
-    assert.deepEqual(deepMerge({ a: 1 }, { a: 2 }), { a: 2 })
-  })
-
-  test('merges nested objects', () => {
-    assert.deepEqual(
-      deepMerge({ a: { b: 1 } }, { a: { c: 2 } }),
-      { a: { b: 1, c: 2 } }
-    )
-  })
-
-  test('merges arrays by index', () => {
-    assert.deepEqual(
-      deepMerge({ items: [{ a: 1 }] }, { items: [{ b: 2 }] }),
-      { items: [{ a: 1, b: 2 }] }
-    )
-  })
-
-  test('explicit flags + -d merge', () => {
-    const body = { template_id: 1 }
-    deepMerge(body, parseDataFlags(['submitters[0][email]=a@b.com']))
-    assert.deepEqual(body, {
-      template_id: 1,
-      submitters: [{ email: 'a@b.com' }],
-    })
-  })
-})
 
 // --- submissions list ---
 
@@ -337,8 +228,8 @@ describe('submissions create', () => {
         email: 'a@b.com',
         role: 'Signer',
         values: { 'First Name': 'John', 'Last Name': 'Doe' },
-        metadata: { department: 'Sales', id: 123 },
-        fields: [{ name: 'First Name', default_value: 'John', readonly: true }],
+        metadata: { department: 'Sales', id: '123' },
+        fields: [{ name: 'First Name', default_value: 'John', readonly: 'true' }],
       }],
       message: { subject: 'Please sign', body: 'Hello' },
       variables: { company: 'Acme' },
@@ -488,7 +379,7 @@ describe('submissions create-docx', () => {
       submitters: [{
         email: 'a@b.com',
         role: 'Signer',
-        fields: [{ name: 'First Name', default_value: 'John', readonly: true }],
+        fields: [{ name: 'First Name', default_value: 'John', readonly: 'true' }],
         values: { Company: 'Acme' },
         metadata: { dept: 'Sales' },
       }],

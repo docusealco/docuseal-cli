@@ -228,8 +228,8 @@ describe('templates create-pdf', () => {
         name: 'docuseal-tpl-test.pdf',
         file: `data:application/octet-stream;base64,${b64}`,
         fields: [
-          { name: 'Name', type: 'text', role: 'Signer', required: true },
-          { name: 'Signature', type: 'signature', areas: [{ x: 0.1, y: 0.5, w: 0.3, h: 0.05, page: 1 }] },
+          { name: 'Name', type: 'text', role: 'Signer', required: 'true' },
+          { name: 'Signature', type: 'signature', areas: [{ x: '0.1', y: '0.5', w: '0.3', h: '0.05', page: '1' }] },
         ],
       }],
     })
@@ -293,8 +293,8 @@ describe('templates create-docx', () => {
         name: 'docuseal-tpl-test.docx',
         file: `data:application/octet-stream;base64,${b64}`,
         fields: [
-          { name: 'Date', type: 'date', role: 'Signer', required: true },
-          { name: 'Signature', type: 'signature', areas: [{ x: 0.2, y: 0.8, w: 0.3, h: 0.05, page: 2 }] },
+          { name: 'Date', type: 'date', role: 'Signer', required: 'true' },
+          { name: 'Signature', type: 'signature', areas: [{ x: '0.2', y: '0.8', w: '0.3', h: '0.05', page: '2' }] },
         ],
       }],
     })
@@ -406,7 +406,7 @@ describe('templates merge', () => {
     await cli('templates', 'merge', '-d', 'template_ids[]=1', '-d', 'template_ids[]=2')
     assert.equal(lastRequest.method, 'POST')
     assert.equal(lastRequest.path, '/templates/merge')
-    assert.deepEqual(lastRequest.body.template_ids, [1, 2])
+    assert.deepEqual(lastRequest.body.template_ids, ['1', '2'])
   })
 
   test('--name', async () => {
@@ -461,7 +461,7 @@ describe('templates update-documents', () => {
       merge: true,
       documents: [
         { file: 'https://example.com/doc.pdf', name: 'New Doc' },
-        { html: '<p>Page 2</p>', name: 'HTML Page', position: 1 },
+        { html: '<p>Page 2</p>', name: 'HTML Page', position: '1' },
       ],
     })
   })

@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@docuseal/api": "^1.0.21",
-    "commander": "^13.0.0"
+    "commander": "^13.0.0",
+    "qs": "^6.15.0"
   }
 }

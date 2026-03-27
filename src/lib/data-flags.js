@@ -1,55 +1,7 @@
-function coerce(v) {
-  if (v === 'true') return true
-  if (v === 'false') return false
-  if (v !== '' && !isNaN(v)) return Number(v)
-  return v
-}
+import { parse } from 'qs'
 
 export function parseDataFlags(pairs) {
-  const result = {}
-
-  for (const pair of pairs) {
-    const eqIdx = pair.indexOf('=')
-    if (eqIdx === -1) continue
-
-    const rawKey = pair.slice(0, eqIdx)
-    const value = coerce(pair.slice(eqIdx + 1))
-
-    const segments = []
-    const firstBracket = rawKey.indexOf('[')
-    if (firstBracket === -1) {
-      segments.push(rawKey)
-    } else {
-      segments.push(rawKey.slice(0, firstBracket))
-      const rest = rawKey.slice(firstBracket)
-      for (const m of rest.matchAll(/\[([^\]]*)\]/g)) {
-        segments.push(m[1])
-      }
-    }
-
-    let current = result
-    for (let i = 0; i < segments.length - 1; i++) {
-      const seg = segments[i]
-      const nextSeg = segments[i + 1]
-      const nextIsIndex = /^\d+$/.test(nextSeg) || nextSeg === ''
-
-      if (current[seg] === undefined) {
-        current[seg] = nextIsIndex ? [] : {}
-      }
-      current = current[seg]
-    }
-
-    const lastSeg = segments[segments.length - 1]
-    if (lastSeg === '') {
-      if (Array.isArray(current)) {
-        current.push(value)
-      }
-    } else {
-      current[lastSeg] = value
-    }
-  }
-
-  return result
+  return parse(pairs.join('&'), { depth: 10 })
 }
 
 export function deepMerge(target, source) {

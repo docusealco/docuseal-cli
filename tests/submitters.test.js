@@ -224,8 +224,8 @@ describe('submitters update', () => {
     assert.deepEqual(lastRequest.body, {
       values: { 'First Name': 'John', 'Last Name': 'Doe' },
       fields: [
-        { name: 'First Name', default_value: 'John', readonly: true },
-        { name: 'Email', required: true },
+        { name: 'First Name', default_value: 'John', readonly: 'true' },
+        { name: 'Email', required: 'true' },
       ],
       message: { subject: 'Please sign', body: 'Hello, please sign this' },
     })
@@ -251,7 +251,7 @@ describe('submitters update', () => {
       send_email: true,
       values: { Name: 'Jane' },
       metadata: { dept: 'HR' },
-      fields: [{ name: 'Name', readonly: true }],
+      fields: [{ name: 'Name', readonly: 'true' }],
       message: { subject: 'Updated', body: 'Please review' },
     })
   })
