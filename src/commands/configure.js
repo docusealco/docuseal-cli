@@ -39,7 +39,7 @@ export function registerConfigure(program) {
           new Promise(resolve => rl.question(q, resolve))
 
         if (!server) {
-          server = (await ask('Server [com/eu/url] (default: com): ')) || 'com'
+          server = (await ask('Server [com | eu | https://yourdomain.com/api] (default: com): ')) || 'com'
         }
         if (!apiKey) {
           apiKey = await ask('Enter your API token: ')
