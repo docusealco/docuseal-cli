@@ -6,12 +6,16 @@ const CONFIG_DIR = join(homedir(), '.docuseal')
 const CONFIG_FILE = join(CONFIG_DIR, 'config.json')
 
 const SERVER_MAP = {
-  com: 'https://api.docuseal.com',
-  eu: 'https://api.docuseal.eu',
+  global: 'https://api.docuseal.com',
+  europe: 'https://api.docuseal.eu',
 }
 
 export function resolveServer(input) {
-  return SERVER_MAP[input] ?? input
+  if (SERVER_MAP[input]) return SERVER_MAP[input]
+
+  const url = input.replace(/\/+$/, '')
+
+  return url.endsWith('/api') ? url : url + '/api'
 }
 
 export function loadConfig(overrides) {
@@ -29,7 +33,7 @@ export function loadConfig(overrides) {
     overrides?.server ??
     process.env.DOCUSEAL_SERVER ??
     fileConfig.server ??
-    'com'
+    'global'
   )
 
   if (!apiKey) {

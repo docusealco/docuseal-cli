@@ -32,7 +32,7 @@ docuseal configure
 The `configure` command will prompt for your API token and server:
 
 ```
-Server [com/eu/url] (default: com): com
+Server [global/europe/url] (default: global): global
 Enter your API token: xxxxxxxxxx
 ✓ Saved to ~/.docuseal/config.json
 ```
@@ -80,7 +80,7 @@ docuseal configure
 ### Non-Interactive Setup
 
 ```bash
-docuseal configure --api-key YOUR_KEY --server com
+docuseal configure --api-key YOUR_KEY --server global
 ```
 
 ### Show Current Config
@@ -96,7 +96,7 @@ docuseal configure --list
 
 ```bash
 export DOCUSEAL_API_KEY=your_key
-export DOCUSEAL_SERVER=com       # com, eu, or full URL
+export DOCUSEAL_SERVER=global    # global, europe, or full URL
 ```
 
 ### Config File
@@ -116,8 +116,8 @@ Stored at `~/.docuseal/config.json`:
 
 | Value | URL                        |
 |-------|----------------------------|
-| `com` | `https://api.docuseal.com` |
-| `eu`  | `https://api.docuseal.eu`  |
+| `global` | `https://api.docuseal.com` |
+| `europe` | `https://api.docuseal.eu`  |
 | URL   | Your self-hosted instance  |
 
 ---
@@ -324,7 +324,7 @@ These flags work on every command:
 | Flag          | Description                                   |
 |---------------|-----------------------------------------------|
 | `--api-key`   | Override API key for this invocation           |
-| `--server`    | Server: `com`, `eu`, or full URL               |
+| `--server`    | Server: `global`, `europe`, or full URL         |
 
 Flags available on list commands:
 
@@ -343,8 +343,8 @@ Flag available on commands with body parameters:
 
 ```bash
 # Query a different server without changing config
-docuseal templates list --server eu
-docuseal templates list --server https://docuseal.mycompany.com
+docuseal templates list --server europe
+docuseal templates list --server https://docuseal.yourdomain.com
 ```
 
 ---

@@ -9,11 +9,11 @@ export function registerConfigure(program) {
     .command('configure')
     .description('Configure API key and server')
     .option('--api-key <value>', 'API key to save')
-    .option('--server <value>', 'Server: com, eu, or full URL (default: com)')
+    .option('--server <value>', 'Server: global, europe, or full URL (default: global)')
     .option('--list', 'Show current configuration and verify authentication')
     .addHelpText('afterAll', formatExamples([
       'docuseal configure',
-      'docuseal configure --api-key YOUR_KEY --server com',
+      'docuseal configure --api-key YOUR_KEY --server global',
       'docuseal configure --list',
     ]))
     .action(async (opts) => {
@@ -39,8 +39,9 @@ export function registerConfigure(program) {
           new Promise(resolve => rl.question(q, resolve))
 
         if (!server) {
-          server = (await ask('Server [com | eu | https://yourdomain.com/api] (default: com): ')) || 'com'
+          server = (await ask('Server [global | europe | https://docuseal.yourdomain.com] (default: global):')) || 'global'
         }
+
         if (!apiKey) {
           apiKey = await ask('Enter your API token: ')
         }

@@ -4,7 +4,7 @@ export function withGlobalOptions(cmd) {
   return cmd
     .addOption(new Option('--api-key <value>').hideHelp())
     .addOption(new Option('--server <value>').hideHelp())
-    .addHelpText('afterAll', '\nGlobal Options:\n  --api-key <value>   Override API key for this invocation\n  --server <value>    Server: com, eu, or full URL (e.g. https://yourdomain.com/api)')
+    .addHelpText('afterAll', '\nGlobal Options:\n  --api-key <value>   Override API key for this invocation\n  --server <value>    Server: global, europe, or full URL (e.g. https://docuseal.yourdomain.com)')
 }
 
 export function formatDataParams(params) {

@@ -15,7 +15,7 @@ before(async () => {
     req.on('end', () => {
       lastRequest = {
         method: req.method,
-        path: req.url.split('?')[0],
+        path: req.url.split('?')[0].replace('/api', ''),
         query: Object.fromEntries(new URL(req.url, 'http://localhost').searchParams),
         headers: req.headers,
         body: body ? JSON.parse(body) : undefined,
@@ -37,7 +37,7 @@ function cli(...args) {
       env: {
         ...process.env,
         DOCUSEAL_API_KEY: 'test-key',
-        DOCUSEAL_SERVER: `http://localhost:${port}`,
+        DOCUSEAL_SERVER: `http://localhost:${port}/api`,
       },
     }, (err, stdout, stderr) => {
       resolve({ stdout, stderr, code: err?.code ?? 0 })
