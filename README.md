@@ -155,7 +155,7 @@ docuseal templates create-docx --file template.docx --name "Contract"
 
 ```bash
 # Inline HTML
-docuseal templates create-html --html "<p>Hello {{name}}</p>" --name "Simple"
+docuseal templates create-html --html "<p><text-field name=\"Name\"></text-field></p>" --name "Simple"
 
 # From file
 docuseal templates create-html --file template.html --name "Contract"
