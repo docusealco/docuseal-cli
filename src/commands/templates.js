@@ -98,7 +98,7 @@ export function registerTemplateCommands(program) {
     .option('--no-flatten', '')
     .option('--remove-tags', 'Remove {{text}} tags from the PDF (enabled by default).')
     .option('--no-remove-tags', '')
-    .addOption(new Option('--file <value>', 'Path to local PDF file').makeOptionMandatory())
+    .addOption(new Option('--file <value>', 'Path to local PDF file'))
     .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['documents[N][name]', 'Document name'],
@@ -149,7 +149,7 @@ export function registerTemplateCommands(program) {
     .addOption(new Option('--folder-name <value>', 'The folder\'s name in which the template should be created.'))
     .option('--shared-link', 'Make the template available via a shared link.')
     .option('--no-shared-link', '')
-    .addOption(new Option('--file <value>', 'Path to local DOCX file').makeOptionMandatory())
+    .addOption(new Option('--file <value>', 'Path to local DOCX file'))
     .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['documents[N][name]', 'Document name'],

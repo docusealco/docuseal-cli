@@ -168,7 +168,7 @@ export function registerSubmissionCommands(program) {
     .option('--no-merge-documents', '')
     .option('--remove-tags', 'Remove {{text}} tags from the PDF (enabled by default).')
     .option('--no-remove-tags', '')
-    .addOption(new Option('--file <value>', 'Path to local PDF file').makeOptionMandatory())
+    .addOption(new Option('--file <value>', 'Path to local PDF file'))
     .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['template_ids[]', 'Template ID to use alongside provided documents'],
@@ -244,7 +244,7 @@ export function registerSubmissionCommands(program) {
     .option('--no-merge-documents', '')
     .option('--remove-tags', 'Remove {{text}} tags from the PDF (enabled by default).')
     .option('--no-remove-tags', '')
-    .addOption(new Option('--file <value>', 'Path to local DOCX file').makeOptionMandatory())
+    .addOption(new Option('--file <value>', 'Path to local DOCX file'))
     .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['variables[key]', 'Template variable'],
