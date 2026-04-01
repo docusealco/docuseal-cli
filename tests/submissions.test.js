@@ -400,8 +400,8 @@ describe('submissions create-html', () => {
 
   after(() => unlinkSync(tmpFile))
 
-  test('--html-file', async () => {
-    await cli('submissions', 'create-html', '--html-file', tmpFile, '-d', 'submitters[0][email]=a@b.com')
+  test('--file', async () => {
+    await cli('submissions', 'create-html', '--file', tmpFile, '-d', 'submitters[0][email]=a@b.com')
     assert.equal(lastRequest.method, 'POST')
     assert.equal(lastRequest.path, '/submissions/html')
     assert.equal(lastRequest.body.html, '<p>{{name}}</p>')

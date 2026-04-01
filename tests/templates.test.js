@@ -320,8 +320,8 @@ describe('templates create-html', () => {
     assert.equal(lastRequest.body.html, '<p>{{field}}</p>')
   })
 
-  test('--html-file', async () => {
-    await cli('templates', 'create-html', '--html-file', tmpFile)
+  test('--file', async () => {
+    await cli('templates', 'create-html', '--file', tmpFile)
     assert.equal(lastRequest.body.html, '<p>{{name}}</p>')
   })
 

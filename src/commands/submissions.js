@@ -191,6 +191,7 @@ export function registerSubmissionCommands(program) {
     ]))
     .addHelpText('afterAll', formatExamples([
       'docuseal submissions create-pdf --file doc.pdf -d "submitters[0][email]=john@acme.com"',
+      'docuseal submissions create-pdf -d "documents[0][file]=./doc.pdf" -d "submitters[0][email]=john@acme.com"',
     ]))
     .action(async (opts) => {
       const body = {}
@@ -256,6 +257,7 @@ export function registerSubmissionCommands(program) {
     ]))
     .addHelpText('afterAll', formatExamples([
       'docuseal submissions create-docx --file doc.docx -d "submitters[0][email]=john@acme.com"',
+      'docuseal submissions create-docx -d "documents[0][file]=./doc.docx" -d "submitters[0][email]=john@acme.com"',
     ]))
     .action(async (opts) => {
       const body = {}

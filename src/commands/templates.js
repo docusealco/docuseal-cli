@@ -119,6 +119,7 @@ export function registerTemplateCommands(program) {
     .addHelpText('afterAll', formatExamples([
       'docuseal templates create-pdf --file contract.pdf --name "NDA"',
       'docuseal templates create-pdf --file form.pdf --folder-name Legal',
+      'docuseal templates create-pdf -d "documents[0][file]=./contract.pdf" --name "NDA"',
       'docuseal templates create-pdf --file form.pdf -d "documents[0][fields][0][name]=Name" -d "documents[0][fields][0][type]=text"',
     ]))
     .action(async (opts) => {
@@ -167,6 +168,7 @@ export function registerTemplateCommands(program) {
     ]))
     .addHelpText('afterAll', formatExamples([
       'docuseal templates create-docx --file template.docx --name "Contract"',
+      'docuseal templates create-docx -d "documents[0][file]=./template.docx" --name "Contract"',
       'docuseal templates create-docx --file template.docx -d "documents[0][fields][0][name]=Name" -d "documents[0][fields][0][role]=Signer"',
     ]))
     .action(async (opts) => {
@@ -288,6 +290,7 @@ export function registerTemplateCommands(program) {
     ]))
     .addHelpText('afterAll', formatExamples([
       'docuseal templates update-documents 1001',
+      'docuseal templates update-documents 1001 -d "documents[0][file]=./contract.pdf"',
       'docuseal templates update-documents 1001 -d "documents[0][file]=https://example.com/doc.pdf" -d "documents[0][name]=New Doc"',
     ]))
     .action(async (id, opts) => {
