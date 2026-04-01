@@ -294,7 +294,7 @@ export function registerSubmissionCommands(program) {
     .addOption(new Option('--expire-at <value>', 'Specify the expiration date and time after which the submission becomes unavailable for signature.'))
     .option('--merge-documents', 'Merge documents into a single PDF file.')
     .option('--no-merge-documents', '')
-    .addOption(new Option('--html-file <value>', 'Path to local HTML file'))
+    .addOption(new Option('--file <value>', 'Path to local HTML file'))
     .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['submitters[N][email]', 'Email address (required)'],
@@ -319,7 +319,7 @@ export function registerSubmissionCommands(program) {
       ['message[body]', 'Custom email body'],
     ]))
     .addHelpText('afterAll', formatExamples([
-      'docuseal submissions create-html --html-file template.html -d "submitters[0][email]=john@acme.com"',
+      'docuseal submissions create-html --file template.html -d "submitters[0][email]=john@acme.com"',
       'docuseal submissions create-html -d "documents[0][html]=<p>{{name}}</p>" -d "submitters[0][email]=john@acme.com"',
     ]))
     .action(async (opts) => {
@@ -333,7 +333,7 @@ export function registerSubmissionCommands(program) {
       if (opts.replyTo !== undefined) body['reply_to'] = opts.replyTo
       if (opts.expireAt !== undefined) body['expire_at'] = opts.expireAt
       if (opts.mergeDocuments !== undefined) body['merge_documents'] = opts.mergeDocuments
-      if (opts.htmlFile !== undefined) body.html = readFileSync(opts.htmlFile, 'utf8')
+      if (opts.file !== undefined) body.html = readFileSync(opts.file, 'utf8')
       if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
       createClient(opts).createSubmissionFromHtml(body).then(renderJson, onError)

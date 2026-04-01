@@ -158,7 +158,7 @@ docuseal templates create-docx --file template.docx --name "Contract"
 docuseal templates create-html --html "<p>Hello {{name}}</p>" --name "Simple"
 
 # From file
-docuseal templates create-html --html-file template.html --name "Contract"
+docuseal templates create-html --file template.html --name "Contract"
 ```
 
 ### Update Template

@@ -197,7 +197,7 @@ export function registerTemplateCommands(program) {
     .addOption(new Option('--folder-name <value>', 'The folder\'s name in which the template should be created.'))
     .option('--shared-link', 'Make the template available via a shared link.')
     .option('--no-shared-link', '')
-    .addOption(new Option('--html-file <value>', 'Path to local HTML file (alternative to --html)'))
+    .addOption(new Option('--file <value>', 'Path to local HTML file (alternative to --html)'))
     .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['documents[N][html]', 'HTML template with field tags'],
@@ -205,7 +205,7 @@ export function registerTemplateCommands(program) {
     ]))
     .addHelpText('afterAll', formatExamples([
       'docuseal templates create-html --html "<p>{{name}}</p>" --name "Simple"',
-      'docuseal templates create-html --html-file template.html --name "Contract"',
+      'docuseal templates create-html --file template.html --name "Contract"',
       'docuseal templates create-html -d "documents[0][html]=<p>{{name}}</p>" -d "documents[0][name]=Page 1"',
     ]))
     .action(async (opts) => {
@@ -218,7 +218,7 @@ export function registerTemplateCommands(program) {
       if (opts.externalId !== undefined) body['external_id'] = opts.externalId
       if (opts.folderName !== undefined) body['folder_name'] = opts.folderName
       if (opts.sharedLink !== undefined) body['shared_link'] = opts.sharedLink
-      if (opts.htmlFile !== undefined) body.html = readFileSync(opts.htmlFile, 'utf8')
+      if (opts.file !== undefined) body.html = readFileSync(opts.file, 'utf8')
       if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
       createClient(opts).createTemplateFromHtml(body).then(renderJson, onError)
