@@ -109,12 +109,12 @@ export function registerTemplateCommands(program) {
       ['documents[N][fields][M][required]', 'Required (true/false)'],
       ['documents[N][fields][M][title]', 'Display title (Markdown)'],
       ['documents[N][fields][M][description]', 'Display description (Markdown)'],
-      ['documents[N][fields][M][options][]', 'Select/radio option values'],
       ['documents[N][fields][M][areas][K][x]', 'X coordinate (0-1)'],
       ['documents[N][fields][M][areas][K][y]', 'Y coordinate (0-1)'],
       ['documents[N][fields][M][areas][K][w]', 'Width (0-1)'],
       ['documents[N][fields][M][areas][K][h]', 'Height (0-1)'],
       ['documents[N][fields][M][areas][K][page]', 'Page number (starts from 1)'],
+      ['documents[N][fields][M][options][]', 'Select/radio option values'],
     ]))
     .addHelpText('afterAll', formatExamples([
       'docuseal templates create-pdf --file contract.pdf --name "NDA"',
@@ -160,12 +160,12 @@ export function registerTemplateCommands(program) {
       ['documents[N][fields][M][required]', 'Required (true/false)'],
       ['documents[N][fields][M][title]', 'Display title (Markdown)'],
       ['documents[N][fields][M][description]', 'Display description (Markdown)'],
-      ['documents[N][fields][M][options][]', 'Select/radio option values'],
       ['documents[N][fields][M][areas][K][x]', 'X coordinate (0-1)'],
       ['documents[N][fields][M][areas][K][y]', 'Y coordinate (0-1)'],
       ['documents[N][fields][M][areas][K][w]', 'Width (0-1)'],
       ['documents[N][fields][M][areas][K][h]', 'Height (0-1)'],
       ['documents[N][fields][M][areas][K][page]', 'Page number (starts from 1)'],
+      ['documents[N][fields][M][options][]', 'Select/radio option values'],
     ]))
     .addHelpText('afterAll', formatExamples([
       'docuseal templates create-docx --file template.docx --name "Contract"',

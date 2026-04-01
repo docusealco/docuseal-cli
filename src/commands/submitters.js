@@ -78,6 +78,8 @@ export function registerSubmitterCommands(program) {
       ['fields[N][default_value]', 'Default value'],
       ['fields[N][readonly]', 'Read-only (true/false)'],
       ['fields[N][required]', 'Required (true/false)'],
+      ['fields[N][title]', 'Display title (Markdown)'],
+      ['fields[N][description]', 'Display description (Markdown)']
     ]))
     .addHelpText('afterAll', formatExamples([
       'docuseal submitters update 201 --email new@acme.com',
