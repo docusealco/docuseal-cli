@@ -183,7 +183,7 @@ npm test                             # run tests
 npm publish                          # publish to npm (runs build via prepublishOnly)
 ```
 
-Distribution: `npx @docuseal/cli` or `npm install -g @docuseal/cli`
+Distribution: `npx docuseal` or `npm install -g docuseal`
 
 ---
 

@@ -1,5 +1,5 @@
 {
-  "name": "@docuseal/cli",
+  "name": "docuseal",
   "version": "1.0.0",
   "description": "DocuSeal CLI — manage templates, submissions, and submitters from the terminal",
   "type": "module",
