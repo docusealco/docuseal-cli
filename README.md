@@ -130,6 +130,7 @@ Stored at `~/.docuseal/config.json`:
 docuseal templates list
 docuseal templates list --folder Legal -l 50
 docuseal templates list --archived
+docuseal templates list --active
 ```
 
 ### Retrieve Template
@@ -167,6 +168,8 @@ docuseal templates create-html --file template.html --name "Contract"
 docuseal templates update 1001 --name "NDA v2"
 docuseal templates update 1001 --folder-name Contracts
 docuseal templates update 1001 -d "roles[]=Signer" -d "roles[]=Reviewer"
+docuseal templates update 1001 --archive
+docuseal templates update 1001 --unarchive
 ```
 
 ### Clone Template
@@ -233,6 +236,11 @@ docuseal submissions create \
   --no-send-email \
   --expire-at "2025-12-31" \
   --order random
+
+# Using JSON
+docuseal submissions create \
+  --template-id 1001 \
+  -d '{"submitters":[{"email":"john@acme.com","role":"Signer"}]}'
 ```
 
 ### Create Submission from PDF
@@ -337,7 +345,7 @@ Flag available on commands with body parameters:
 
 | Flag          | Description                                   |
 |---------------|-----------------------------------------------|
-| `-d`, `--data`| Set body params with bracket notation (repeatable) |
+| `-d`, `--data`| Set params with bracket notation or JSON (repeatable) |
 
 ### Override Server Per-Command
 
