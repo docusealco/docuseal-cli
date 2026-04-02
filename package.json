@@ -1,7 +1,7 @@
 {
   "name": "docuseal",
   "version": "1.0.0",
-  "description": "DocuSeal CLI — manage templates, submissions, and submitters from the terminal",
+  "description": "DocuSeal CLI — manage esignature templates, submissions, and submitters from the terminal",
   "type": "module",
   "bin": {
     "docuseal": "./bin/run.js"
@@ -29,7 +29,7 @@
     "esbuild": "^0.27.4"
   },
   "dependencies": {
-    "@docuseal/api": "^1.0.21",
+    "@docuseal/api": "^1.0.22",
     "commander": "^13.0.0",
     "qs": "^6.15.0"
   }

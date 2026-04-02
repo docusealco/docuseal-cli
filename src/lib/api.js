@@ -1,6 +1,7 @@
 import { DocusealApi, DocusealApiError } from '@docuseal/api'
 import { loadConfig } from './config.js'
 import { renderJson } from './output.js'
+import pkg from '../../package.json' with { type: 'json' }
 
 export { DocusealApi, DocusealApiError }
 
@@ -12,7 +13,7 @@ export function createClient(opts = {}) {
 
   const config = loadConfig(Object.keys(overrides).length > 0 ? overrides : undefined)
 
-  return new DocusealApi({ key: config.apiKey, url: config.server })
+  return new DocusealApi({ key: config.apiKey, url: config.server, userAgent: `DocuSeal CLI v${pkg.version}` })
 }
 
 export function onError(err) {
