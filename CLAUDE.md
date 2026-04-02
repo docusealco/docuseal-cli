@@ -124,7 +124,7 @@ Mapping rules:
 
 ## lib/data-flags.js
 
-- `parseDataFlags(pairs)` — parses bracket notation (e.g. `submitters[0][email]=john@acme.com`) into nested objects/arrays
+- `parseDataFlags(pairs)` — parses bracket notation (e.g. `submitters[0][email]=john@acme.com`) or JSON (e.g. `{"name":"NDA"}`) into nested objects/arrays. Both formats can be mixed and are merged together.
 - `deepMerge(target, source)` — recursively merges objects and arrays
 - Used by all command files for `-d` flag support
 
@@ -148,7 +148,10 @@ Mapping rules:
 
 ## Data Flag (on all commands)
 
-- `-d` / `--data` — set parameters with bracket notation, repeatable (query params for GET, body params for POST/PUT)
+- `-d` / `--data` — set parameters with bracket notation or JSON, repeatable and mergeable (query params for GET, body params for POST/PUT)
+  - Bracket notation: `-d "submitters[0][email]=a@b.com"`
+  - JSON: `-d '{"submitters":[{"email":"a@b.com"}]}'`
+  - Mixed: `-d '{"name":"NDA"}' -d "submitters[0][email]=a@b.com"`
 
 ---
 

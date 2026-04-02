@@ -38,6 +38,33 @@ describe('deepMerge', () => {
   })
 })
 
+describe('JSON -d support', () => {
+  test('parses a single JSON object', () => {
+    const result = parseDataFlags(['{"name":"NDA","template_id":1}'])
+    assert.deepEqual(result, { name: 'NDA', template_id: 1 })
+  })
+
+  test('merges multiple JSON objects', () => {
+    const result = parseDataFlags(['{"name":"NDA"}', '{"template_id":1}'])
+    assert.deepEqual(result, { name: 'NDA', template_id: 1 })
+  })
+
+  test('merges JSON with bracket notation', () => {
+    const result = parseDataFlags(['{"name":"NDA"}', 'submitters[0][email]=a@b.com'])
+    assert.deepEqual(result, { name: 'NDA', submitters: [{ email: 'a@b.com' }] })
+  })
+
+  test('JSON with nested objects', () => {
+    const result = parseDataFlags(['{"submitters":[{"email":"a@b.com","role":"Signer"}]}'])
+    assert.deepEqual(result, { submitters: [{ email: 'a@b.com', role: 'Signer' }] })
+  })
+
+  test('later JSON overrides earlier values', () => {
+    const result = parseDataFlags(['{"name":"Old"}', '{"name":"New"}'])
+    assert.equal(result.name, 'New')
+  })
+})
+
 describe('resolveFiles', () => {
   let tmpFile
 

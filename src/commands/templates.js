@@ -19,7 +19,7 @@ export function registerTemplateCommands(program) {
     .addOption(new Option('-l, --limit <value>', 'The number of templates to return. Default value is 10. Maximum value is 100.').argParser(parseInt))
     .addOption(new Option('--after <value>', 'The unique identifier of the template to start the list from. It allows you to receive only templates with id greater than the specified value. Pass ID value from the `pagination.next` response to load the next batch of templates.').argParser(parseInt))
     .addOption(new Option('--before <value>', 'The unique identifier of the template to end the list with. It allows you to receive only templates with id less than the specified value.').argParser(parseInt))
-    .option('-d, --data <value>', 'Set parameters using bracket notation', (val, prev) => prev.concat([val]), [])
+    .option('-d, --data <value>', 'Set parameters using bracket notation or JSON', (val, prev) => prev.concat([val]), [])
     .addHelpText('afterAll', formatExamples([
       'docuseal templates list',
       'docuseal templates list --folder Legal --limit 50',
@@ -58,7 +58,7 @@ export function registerTemplateCommands(program) {
     .addOption(new Option('--folder-name <value>', 'The folder\'s name to which the template should be moved.'))
     .option('--archive', 'Archive the template.')
     .option('--unarchive', 'Unarchive the template.')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
+    .option('-d, --data <value>', 'Set body parameters using bracket notation or JSON', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['roles[]', 'Submitter role name'],
     ]))
@@ -100,7 +100,7 @@ export function registerTemplateCommands(program) {
     .option('--remove-tags', '')
     .option('--no-remove-tags', 'Keep {{text}} tags in the PDF.')
     .addOption(new Option('--file <value>', 'Path to local PDF file'))
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
+    .option('-d, --data <value>', 'Set body parameters using bracket notation or JSON', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['documents[N][name]', 'Document name'],
       ['documents[N][file]', 'Base64-encoded file or URL'],
@@ -151,7 +151,7 @@ export function registerTemplateCommands(program) {
     .option('--shared-link', '')
     .option('--no-shared-link', 'Disable the shared link for the template.')
     .addOption(new Option('--file <value>', 'Path to local DOCX file'))
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
+    .option('-d, --data <value>', 'Set body parameters using bracket notation or JSON', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['documents[N][name]', 'Document name'],
       ['documents[N][file]', 'Base64-encoded file or URL'],
@@ -203,7 +203,7 @@ export function registerTemplateCommands(program) {
     .option('--shared-link', '')
     .option('--no-shared-link', 'Disable the shared link for the template.')
     .addOption(new Option('--file <value>', 'Path to local HTML file (alternative to --html)'))
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
+    .option('-d, --data <value>', 'Set body parameters using bracket notation or JSON', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['documents[N][html]', 'HTML template with field tags'],
       ['documents[N][name]', 'Document name'],
@@ -235,7 +235,7 @@ export function registerTemplateCommands(program) {
     .addOption(new Option('--name <value>', 'Template name. Existing name with (Clone) suffix will be used if not specified.'))
     .addOption(new Option('--folder-name <value>', 'The folder\'s name to which the template should be cloned.'))
     .addOption(new Option('--external-id <value>', 'Your application-specific unique string key to identify this template within your app.'))
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
+    .option('-d, --data <value>', 'Set body parameters using bracket notation or JSON', (val, prev) => prev.concat([val]), [])
     .addHelpText('afterAll', formatExamples([
       'docuseal templates clone 1001',
       'docuseal templates clone 1001 --name "NDA Copy"',
@@ -257,7 +257,7 @@ export function registerTemplateCommands(program) {
     .addOption(new Option('--external-id <value>', 'Your application-specific unique string key to identify this template within your app.'))
     .option('--shared-link', '')
     .option('--no-shared-link', 'Disable the shared link for the template.')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
+    .option('-d, --data <value>', 'Set body parameters using bracket notation or JSON', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['template_ids[]', 'Template ID to merge (required)'],
       ['roles[]', 'Submitter role name'],
@@ -281,7 +281,7 @@ export function registerTemplateCommands(program) {
     .description('Update template documents (Pro)')
     .argument('<id>', 'The id of the template')
     .option('--merge', 'Merge all existing and new documents into a single PDF.')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
+    .option('-d, --data <value>', 'Set body parameters using bracket notation or JSON', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['documents[N][name]', 'Document name'],
       ['documents[N][file]', 'Base64-encoded PDF/DOCX or URL'],

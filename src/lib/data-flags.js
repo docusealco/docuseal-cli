@@ -3,7 +3,16 @@ import { readFileSync, existsSync } from 'fs'
 import { basename } from 'path'
 
 export function parseDataFlags(pairs) {
-  return resolveFiles(parse(pairs.join('&'), { depth: 10 }))
+  const jsonPairs = pairs.filter(p => p.startsWith('{'))
+  const qsPairs = pairs.filter(p => !p.startsWith('{'))
+
+  let result = qsPairs.length > 0 ? parse(qsPairs.join('&'), { depth: 10 }) : {}
+
+  for (const json of jsonPairs) {
+    result = deepMerge(result, JSON.parse(json))
+  }
+
+  return resolveFiles(result)
 }
 
 function resolveFiles(obj) {

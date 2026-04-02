@@ -18,7 +18,7 @@ export function registerSubmitterCommands(program) {
     .addOption(new Option('-l, --limit <value>', 'The number of submitters to return. Default value is 10. Maximum value is 100.').argParser(parseInt))
     .addOption(new Option('-a, --after <value>', 'The unique identifier of the submitter to start the list from. It allows you to receive only submitters with id greater than the specified value. Pass ID value from the `pagination.next` response to load the next batch of submitters.').argParser(parseInt))
     .addOption(new Option('--before <value>', 'The unique identifier of the submitter to end the list with. It allows you to receive only submitters with id less than the specified value.').argParser(parseInt))
-    .option('-d, --data <value>', 'Set parameters using bracket notation', (val, prev) => prev.concat([val]), [])
+    .option('-d, --data <value>', 'Set parameters using bracket notation or JSON', (val, prev) => prev.concat([val]), [])
     .addHelpText('afterAll', formatExamples([
       'docuseal submitters list',
       'docuseal submitters list --submission-id 502',
@@ -63,7 +63,7 @@ export function registerSubmitterCommands(program) {
     .addOption(new Option('--completed-redirect-url <value>', 'Submitter specific URL to redirect to after the submission completion.'))
     .option('--require-phone-2fa', 'Require phone 2FA verification via one-time code.')
     .option('--require-email-2fa', 'Require email 2FA verification via one-time code.')
-    .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
+    .option('-d, --data <value>', 'Set body parameters using bracket notation or JSON', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['values[fieldName]', 'Pre-filled field value'],
       ['metadata[key]', 'Submitter metadata'],
