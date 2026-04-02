@@ -33,7 +33,7 @@ docuseal-cli/
       api.js                 # createClient(), onError() — all HTTP goes here
       config.js              # ~/.docuseal/config.json read/write
       output.js              # renderJson
-      data-flags.js          # parseDataFlags(), deepMerge(), coerce()
+      data-flags.js          # parseDataFlags(), deepMerge()
       global-options.js      # withGlobalOptions(), formatDataParams(), formatExamples()
   tests/
     templates.test.js
@@ -124,8 +124,7 @@ Mapping rules:
 
 ## lib/data-flags.js
 
-- `coerce(v)` — auto-converts string values: `"true"` → `true`, `"false"` → `false`, numeric strings → numbers
-- `parseDataFlags(pairs)` — parses bracket notation (e.g. `submitters[0][email]=john@acme.com`) into nested objects/arrays, with auto-coercion
+- `parseDataFlags(pairs)` — parses bracket notation (e.g. `submitters[0][email]=john@acme.com`) into nested objects/arrays
 - `deepMerge(target, source)` — recursively merges objects and arrays
 - Used by all command files for `-d` flag support
 

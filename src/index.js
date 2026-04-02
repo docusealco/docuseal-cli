@@ -4,10 +4,7 @@ import { registerTemplateCommands } from './commands/templates.js'
 import { registerSubmissionCommands } from './commands/submissions.js'
 import { registerSubmitterCommands } from './commands/submitters.js'
 import { registerConfigure } from './commands/configure.js'
-import { createRequire } from 'module'
-
-const require = createRequire(import.meta.url)
-const pkg = require('../package.json')
+import pkg from '../package.json' with { type: 'json' }
 
 const program = new Command()
   .name('docuseal')

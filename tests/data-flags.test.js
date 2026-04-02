@@ -48,10 +48,10 @@ describe('resolveFiles', () => {
 
   after(() => unlinkSync(tmpFile))
 
-  test('resolves documents[0][file] to base64 data URI', () => {
+  test('resolves documents[0][file] to base64', () => {
     const result = parseDataFlags([`documents[0][file]=${tmpFile}`])
     const base64 = Buffer.from('dummy-pdf-content').toString('base64')
-    assert.equal(result.documents[0].file, `data:application/octet-stream;base64,${base64}`)
+    assert.equal(result.documents[0].file, base64)
   })
 
   test('sets name from filename when not provided', () => {
@@ -72,8 +72,8 @@ describe('resolveFiles', () => {
   test('resolves file in nested array items', () => {
     const result = parseDataFlags([`documents[0][file]=${tmpFile}`, `documents[1][file]=${tmpFile}`])
     const base64 = Buffer.from('dummy-pdf-content').toString('base64')
-    assert.equal(result.documents[0].file, `data:application/octet-stream;base64,${base64}`)
-    assert.equal(result.documents[1].file, `data:application/octet-stream;base64,${base64}`)
+    assert.equal(result.documents[0].file, base64)
+    assert.equal(result.documents[1].file, base64)
   })
 
   test('does not resolve URL values', () => {

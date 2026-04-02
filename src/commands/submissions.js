@@ -15,8 +15,8 @@ export function registerSubmissionCommands(program) {
     .addOption(new Option('--q <value>', 'Filter submissions based on submitters name, email or phone partial match.'))
     .addOption(new Option('--slug <value>', 'Filter submissions by unique slug.'))
     .addOption(new Option('--template-folder <value>', 'Filter submissions by template folder name.'))
-    .option('--archived', 'Filter by archived or active submissions.')
-    .option('--no-archived', '')
+    .option('--archived', 'Get only archived submissions.')
+    .option('--active', 'Get only active submissions.')
     .addOption(new Option('-l, --limit <value>', 'The number of submissions to return. Default value is 10. Maximum value is 100.').argParser(parseInt))
     .addOption(new Option('-a, --after <value>', 'The unique identifier of the submission to start the list from. It allows you to receive only submissions with an ID greater than the specified value. Pass ID value from the `pagination.next` response to load the next batch of submissions.').argParser(parseInt))
     .addOption(new Option('--before <value>', 'The unique identifier of the submission that marks the end of the list. It allows you to receive only submissions with an ID less than the specified value.').argParser(parseInt))
@@ -33,7 +33,8 @@ export function registerSubmissionCommands(program) {
       if (opts.q !== undefined) query['q'] = opts.q
       if (opts.slug !== undefined) query['slug'] = opts.slug
       if (opts.templateFolder !== undefined) query['template_folder'] = opts.templateFolder
-      if (opts.archived !== undefined) query['archived'] = opts.archived
+      if (opts.archived) query['archived'] = true
+      if (opts.active) query['archived'] = false
       if (opts.limit !== undefined) query['limit'] = opts.limit
       if (opts.after !== undefined) query['after'] = opts.after
       if (opts.before !== undefined) query['before'] = opts.before
@@ -65,10 +66,9 @@ export function registerSubmissionCommands(program) {
   withGlobalOptions(topic.command('create'))
     .description('Create a submission')
     .addOption(new Option('--template-id <value>', 'The unique identifier of the template.').argParser(parseInt).makeOptionMandatory())
-    .option('--send-email', 'Send signature request emails (enabled by default).')
-    .option('--no-send-email', '')
+    .option('--send-email', '')
+    .option('--no-send-email', 'Do not send signature request emails.')
     .option('--send-sms', 'Send signature request via SMS.')
-    .option('--no-send-sms', '')
     .addOption(new Option('--order <value>', 'Pass \'random\' to send signature request emails to all parties right away. The order is \'preserved\' by default so the second party will receive a signature request email only after the document is signed by the first party.').choices(['preserved', 'random']))
     .addOption(new Option('--completed-redirect-url <value>', 'Specify URL to redirect to after the submission completion.'))
     .addOption(new Option('--bcc-completed <value>', 'Specify BCC address to send signed documents to after the completion.'))
@@ -100,8 +100,6 @@ export function registerSubmissionCommands(program) {
       ['submitters[N][fields][M][default_value]', 'Default value'],
       ['submitters[N][fields][M][readonly]', 'Read-only (true/false)'],
       ['submitters[N][fields][M][required]', 'Required (true/false)'],
-      ['submitters[N][fields][M][title]', 'Display title (Markdown)'],
-      ['submitters[N][fields][M][description]', 'Display description (Markdown)'],
       ['submitters[N][roles][]', 'Merge multiple roles'],
     ]))
     .addHelpText('afterAll', formatExamples([
@@ -113,8 +111,8 @@ export function registerSubmissionCommands(program) {
     .action(async (opts) => {
       const body = {}
       if (opts.templateId !== undefined) body['template_id'] = opts.templateId
-      if (opts.sendEmail !== undefined) body['send_email'] = opts.sendEmail
-      if (opts.sendSms !== undefined) body['send_sms'] = opts.sendSms
+      if (opts.sendEmail === false) body['send_email'] = false
+      if (opts.sendSms) body['send_sms'] = true
       if (opts.order !== undefined) body['order'] = opts.order
       if (opts.completedRedirectUrl !== undefined) body['completed_redirect_url'] = opts.completedRedirectUrl
       if (opts.bccCompleted !== undefined) body['bcc_completed'] = opts.bccCompleted
@@ -129,8 +127,8 @@ export function registerSubmissionCommands(program) {
     .description('Create submissions from emails')
     .addOption(new Option('--template-id <value>', 'The unique identifier of the template.').argParser(parseInt).makeOptionMandatory())
     .addOption(new Option('--emails <value>', 'A comma-separated list of email addresses to send the submission to.').makeOptionMandatory())
-    .option('--send-email', 'Send signature request emails (enabled by default).')
-    .option('--no-send-email', '')
+    .option('--send-email', '')
+    .option('--no-send-email', 'Do not send signature request emails.')
     .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['message[subject]', 'Custom email subject'],
@@ -144,7 +142,7 @@ export function registerSubmissionCommands(program) {
       const body = {}
       if (opts.templateId !== undefined) body['template_id'] = opts.templateId
       if (opts.emails !== undefined) body['emails'] = opts.emails
-      if (opts.sendEmail !== undefined) body['send_email'] = opts.sendEmail
+      if (opts.sendEmail === false) body['send_email'] = false
       if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
       createClient(opts).createSubmissionFromEmails(body).then(renderJson, onError)
@@ -153,21 +151,18 @@ export function registerSubmissionCommands(program) {
   withGlobalOptions(topic.command('create-pdf'))
     .description('Create a submission from PDF (Pro)')
     .addOption(new Option('--name <value>', 'Name of the document submission.'))
-    .option('--send-email', 'Send signature request emails (enabled by default).')
-    .option('--no-send-email', '')
+    .option('--send-email', '')
+    .option('--no-send-email', 'Do not send signature request emails.')
     .option('--send-sms', 'Send signature request via SMS.')
-    .option('--no-send-sms', '')
     .addOption(new Option('--order <value>', 'Pass \'random\' to send signature request emails to all parties right away. The order is \'preserved\' by default so the second party will receive a signature request email only after the document is signed by the first party.').choices(['preserved', 'random']))
     .addOption(new Option('--completed-redirect-url <value>', 'Specify URL to redirect to after the submission completion.'))
     .addOption(new Option('--bcc-completed <value>', 'Specify BCC address to send signed documents to after the completion.'))
     .addOption(new Option('--reply-to <value>', 'Specify Reply-To address to use in the notification emails.'))
     .addOption(new Option('--expire-at <value>', 'Specify the expiration date and time after which the submission becomes unavailable for signature.'))
     .option('--flatten', 'Remove PDF form fields from the documents.')
-    .option('--no-flatten', '')
     .option('--merge-documents', 'Merge documents into a single PDF file.')
-    .option('--no-merge-documents', '')
-    .option('--remove-tags', 'Remove {{text}} tags from the PDF (enabled by default).')
-    .option('--no-remove-tags', '')
+    .option('--remove-tags', '')
+    .option('--no-remove-tags', 'Keep {{text}} tags in the PDF.')
     .addOption(new Option('--file <value>', 'Path to local PDF file'))
     .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
@@ -193,8 +188,6 @@ export function registerSubmissionCommands(program) {
       ['submitters[N][fields][M][default_value]', 'Default value'],
       ['submitters[N][fields][M][readonly]', 'Read-only (true/false)'],
       ['submitters[N][fields][M][required]', 'Required (true/false)'],
-      ['submitters[N][fields][M][title]', 'Display title (Markdown)'],
-      ['submitters[N][fields][M][description]', 'Display description (Markdown)'],
       ['submitters[N][roles][]', 'Merge multiple roles'],
       ['message[subject]', 'Custom email subject'],
       ['message[body]', 'Custom email body'],
@@ -207,21 +200,21 @@ export function registerSubmissionCommands(program) {
     .action(async (opts) => {
       const body = {}
       if (opts.name !== undefined) body['name'] = opts.name
-      if (opts.sendEmail !== undefined) body['send_email'] = opts.sendEmail
-      if (opts.sendSms !== undefined) body['send_sms'] = opts.sendSms
+      if (opts.sendEmail === false) body['send_email'] = false
+      if (opts.sendSms) body['send_sms'] = true
       if (opts.order !== undefined) body['order'] = opts.order
       if (opts.completedRedirectUrl !== undefined) body['completed_redirect_url'] = opts.completedRedirectUrl
       if (opts.bccCompleted !== undefined) body['bcc_completed'] = opts.bccCompleted
       if (opts.replyTo !== undefined) body['reply_to'] = opts.replyTo
       if (opts.expireAt !== undefined) body['expire_at'] = opts.expireAt
-      if (opts.flatten !== undefined) body['flatten'] = opts.flatten
-      if (opts.mergeDocuments !== undefined) body['merge_documents'] = opts.mergeDocuments
-      if (opts.removeTags !== undefined) body['remove_tags'] = opts.removeTags
+      if (opts.flatten) body['flatten'] = true
+      if (opts.mergeDocuments) body['merge_documents'] = true
+      if (opts.removeTags === false) body['remove_tags'] = false
       if (opts.file !== undefined) {
         const fileContent = readFileSync(opts.file)
         const base64 = Buffer.from(fileContent).toString('base64')
         const fileName = opts.file.split('/').pop() || 'document'
-        body.documents = [{ name: fileName, file: `data:application/octet-stream;base64,${base64}` }]
+        body.documents = [{ name: fileName, file: base64 }]
       }
       if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
@@ -231,19 +224,17 @@ export function registerSubmissionCommands(program) {
   withGlobalOptions(topic.command('create-docx'))
     .description('Create a submission from DOCX (Pro)')
     .addOption(new Option('--name <value>', 'Name of the document submission.'))
-    .option('--send-email', 'Send signature request emails (enabled by default).')
-    .option('--no-send-email', '')
+    .option('--send-email', '')
+    .option('--no-send-email', 'Do not send signature request emails.')
     .option('--send-sms', 'Send signature request via SMS.')
-    .option('--no-send-sms', '')
     .addOption(new Option('--order <value>', 'Pass \'random\' to send signature request emails to all parties right away. The order is \'preserved\' by default so the second party will receive a signature request email only after the document is signed by the first party.').choices(['preserved', 'random']))
     .addOption(new Option('--completed-redirect-url <value>', 'Specify URL to redirect to after the submission completion.'))
     .addOption(new Option('--bcc-completed <value>', 'Specify BCC address to send signed documents to after the completion.'))
     .addOption(new Option('--reply-to <value>', 'Specify Reply-To address to use in the notification emails.'))
     .addOption(new Option('--expire-at <value>', 'Specify the expiration date and time after which the submission becomes unavailable for signature.'))
     .option('--merge-documents', 'Merge documents into a single PDF file.')
-    .option('--no-merge-documents', '')
-    .option('--remove-tags', 'Remove {{text}} tags from the PDF (enabled by default).')
-    .option('--no-remove-tags', '')
+    .option('--remove-tags', '')
+    .option('--no-remove-tags', 'Keep {{text}} tags in the PDF.')
     .addOption(new Option('--file <value>', 'Path to local DOCX file'))
     .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
@@ -270,8 +261,6 @@ export function registerSubmissionCommands(program) {
       ['submitters[N][fields][M][default_value]', 'Default value'],
       ['submitters[N][fields][M][readonly]', 'Read-only (true/false)'],
       ['submitters[N][fields][M][required]', 'Required (true/false)'],
-      ['submitters[N][fields][M][title]', 'Display title (Markdown)'],
-      ['submitters[N][fields][M][description]', 'Display description (Markdown)'],
       ['submitters[N][roles][]', 'Merge multiple roles'],
       ['message[subject]', 'Custom email subject'],
       ['message[body]', 'Custom email body'],
@@ -284,20 +273,20 @@ export function registerSubmissionCommands(program) {
     .action(async (opts) => {
       const body = {}
       if (opts.name !== undefined) body['name'] = opts.name
-      if (opts.sendEmail !== undefined) body['send_email'] = opts.sendEmail
-      if (opts.sendSms !== undefined) body['send_sms'] = opts.sendSms
+      if (opts.sendEmail === false) body['send_email'] = false
+      if (opts.sendSms) body['send_sms'] = true
       if (opts.order !== undefined) body['order'] = opts.order
       if (opts.completedRedirectUrl !== undefined) body['completed_redirect_url'] = opts.completedRedirectUrl
       if (opts.bccCompleted !== undefined) body['bcc_completed'] = opts.bccCompleted
       if (opts.replyTo !== undefined) body['reply_to'] = opts.replyTo
       if (opts.expireAt !== undefined) body['expire_at'] = opts.expireAt
-      if (opts.mergeDocuments !== undefined) body['merge_documents'] = opts.mergeDocuments
-      if (opts.removeTags !== undefined) body['remove_tags'] = opts.removeTags
+      if (opts.mergeDocuments) body['merge_documents'] = true
+      if (opts.removeTags === false) body['remove_tags'] = false
       if (opts.file !== undefined) {
         const fileContent = readFileSync(opts.file)
         const base64 = Buffer.from(fileContent).toString('base64')
         const fileName = opts.file.split('/').pop() || 'document'
-        body.documents = [{ name: fileName, file: `data:application/octet-stream;base64,${base64}` }]
+        body.documents = [{ name: fileName, file: base64 }]
       }
       if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
@@ -307,17 +296,15 @@ export function registerSubmissionCommands(program) {
   withGlobalOptions(topic.command('create-html'))
     .description('Create a submission from HTML (Pro)')
     .addOption(new Option('--name <value>', 'Name of the document submission'))
-    .option('--send-email', 'Send signature request emails (enabled by default).')
-    .option('--no-send-email', '')
+    .option('--send-email', '')
+    .option('--no-send-email', 'Do not send signature request emails.')
     .option('--send-sms', 'Send signature request via SMS.')
-    .option('--no-send-sms', '')
     .addOption(new Option('--order <value>', 'Pass \'random\' to send signature request emails to all parties right away. The order is \'preserved\' by default so the second party will receive a signature request email only after the document is signed by the first party.').choices(['preserved', 'random']))
     .addOption(new Option('--completed-redirect-url <value>', 'Specify URL to redirect to after the submission completion.'))
     .addOption(new Option('--bcc-completed <value>', 'Specify BCC address to send signed documents to after the completion.'))
     .addOption(new Option('--reply-to <value>', 'Specify Reply-To address to use in the notification emails.'))
     .addOption(new Option('--expire-at <value>', 'Specify the expiration date and time after which the submission becomes unavailable for signature.'))
     .option('--merge-documents', 'Merge documents into a single PDF file.')
-    .option('--no-merge-documents', '')
     .addOption(new Option('--file <value>', 'Path to local HTML file'))
     .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
@@ -348,8 +335,6 @@ export function registerSubmissionCommands(program) {
       ['submitters[N][fields][M][default_value]', 'Default value'],
       ['submitters[N][fields][M][readonly]', 'Read-only (true/false)'],
       ['submitters[N][fields][M][required]', 'Required (true/false)'],
-      ['submitters[N][fields][M][title]', 'Display title (Markdown)'],
-      ['submitters[N][fields][M][description]', 'Display description (Markdown)'],
       ['submitters[N][roles][]', 'Merge multiple roles'],
       ['message[subject]', 'Custom email subject'],
       ['message[body]', 'Custom email body'],
@@ -361,14 +346,14 @@ export function registerSubmissionCommands(program) {
     .action(async (opts) => {
       const body = {}
       if (opts.name !== undefined) body['name'] = opts.name
-      if (opts.sendEmail !== undefined) body['send_email'] = opts.sendEmail
-      if (opts.sendSms !== undefined) body['send_sms'] = opts.sendSms
+      if (opts.sendEmail === false) body['send_email'] = false
+      if (opts.sendSms) body['send_sms'] = true
       if (opts.order !== undefined) body['order'] = opts.order
       if (opts.completedRedirectUrl !== undefined) body['completed_redirect_url'] = opts.completedRedirectUrl
       if (opts.bccCompleted !== undefined) body['bcc_completed'] = opts.bccCompleted
       if (opts.replyTo !== undefined) body['reply_to'] = opts.replyTo
       if (opts.expireAt !== undefined) body['expire_at'] = opts.expireAt
-      if (opts.mergeDocuments !== undefined) body['merge_documents'] = opts.mergeDocuments
+      if (opts.mergeDocuments) body['merge_documents'] = true
       if (opts.file !== undefined) body.html = readFileSync(opts.file, 'utf8')
       if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
@@ -379,7 +364,6 @@ export function registerSubmissionCommands(program) {
     .description('Get submission documents')
     .argument('<id>', 'The id of the submission')
     .option('--merge', 'Merge all documents into a single PDF.')
-    .option('--no-merge', '')
     .option('-d, --data <value>', 'Set parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('afterAll', formatExamples([
       'docuseal submissions documents 502',
@@ -387,7 +371,7 @@ export function registerSubmissionCommands(program) {
     ]))
     .action(async (id, opts) => {
       const query = {}
-      if (opts.merge !== undefined) query['merge'] = opts.merge
+      if (opts.merge) query['merge'] = true
       if (opts.data.length > 0) Object.assign(query, parseDataFlags(opts.data))
 
       createClient(opts).getSubmissionDocuments(id, query).then(renderJson, onError)

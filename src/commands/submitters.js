@@ -57,17 +57,12 @@ export function registerSubmitterCommands(program) {
     .addOption(new Option('--phone <value>', 'The phone number of the submitter, formatted according to the E.164 standard.'))
     .addOption(new Option('--external-id <value>', 'Your application-specific unique string key to identify this submitter within your app.'))
     .option('--send-email', 'Re-send signature request emails.')
-    .option('--no-send-email', '')
     .option('--send-sms', 'Re-send signature request via SMS.')
-    .option('--no-send-sms', '')
     .addOption(new Option('--reply-to <value>', 'Specify Reply-To address to use in the notification emails.'))
     .option('--completed', 'Mark submitter as completed and auto-signed.')
-    .option('--no-completed', '')
     .addOption(new Option('--completed-redirect-url <value>', 'Submitter specific URL to redirect to after the submission completion.'))
     .option('--require-phone-2fa', 'Require phone 2FA verification via one-time code.')
-    .option('--no-require-phone-2fa', '')
     .option('--require-email-2fa', 'Require email 2FA verification via one-time code.')
-    .option('--no-require-email-2fa', '')
     .option('-d, --data <value>', 'Set body parameters using bracket notation', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['values[fieldName]', 'Pre-filled field value'],
@@ -77,9 +72,7 @@ export function registerSubmitterCommands(program) {
       ['fields[N][name]', 'Field name (required)'],
       ['fields[N][default_value]', 'Default value'],
       ['fields[N][readonly]', 'Read-only (true/false)'],
-      ['fields[N][required]', 'Required (true/false)'],
-      ['fields[N][title]', 'Display title (Markdown)'],
-      ['fields[N][description]', 'Display description (Markdown)']
+      ['fields[N][required]', 'Required (true/false)']
     ]))
     .addHelpText('afterAll', formatExamples([
       'docuseal submitters update 201 --email new@acme.com',
@@ -92,13 +85,13 @@ export function registerSubmitterCommands(program) {
       if (opts.email !== undefined) body['email'] = opts.email
       if (opts.phone !== undefined) body['phone'] = opts.phone
       if (opts.externalId !== undefined) body['external_id'] = opts.externalId
-      if (opts.sendEmail !== undefined) body['send_email'] = opts.sendEmail
-      if (opts.sendSms !== undefined) body['send_sms'] = opts.sendSms
+      if (opts.sendEmail) body['send_email'] = true
+      if (opts.sendSms) body['send_sms'] = true
       if (opts.replyTo !== undefined) body['reply_to'] = opts.replyTo
-      if (opts.completed !== undefined) body['completed'] = opts.completed
+      if (opts.completed) body['completed'] = true
       if (opts.completedRedirectUrl !== undefined) body['completed_redirect_url'] = opts.completedRedirectUrl
-      if (opts.requirePhone2fa !== undefined) body['require_phone_2fa'] = opts.requirePhone2fa
-      if (opts.requireEmail2fa !== undefined) body['require_email_2fa'] = opts.requireEmail2fa
+      if (opts.requirePhone2fa) body['require_phone_2fa'] = true
+      if (opts.requireEmail2fa) body['require_email_2fa'] = true
       if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
       createClient(opts).updateSubmitter(id, body).then(renderJson, onError)

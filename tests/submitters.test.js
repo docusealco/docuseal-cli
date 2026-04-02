@@ -141,19 +141,9 @@ describe('submitters update', () => {
     assert.equal(lastRequest.body.send_email, true)
   })
 
-  test('--no-send-email', async () => {
-    await cli('submitters', 'update', '201', '--no-send-email')
-    assert.equal(lastRequest.body.send_email, false)
-  })
-
   test('--send-sms', async () => {
     await cli('submitters', 'update', '201', '--send-sms')
     assert.equal(lastRequest.body.send_sms, true)
-  })
-
-  test('--no-send-sms', async () => {
-    await cli('submitters', 'update', '201', '--no-send-sms')
-    assert.equal(lastRequest.body.send_sms, false)
   })
 
   test('--reply-to', async () => {
@@ -166,11 +156,6 @@ describe('submitters update', () => {
     assert.equal(lastRequest.body.completed, true)
   })
 
-  test('--no-completed', async () => {
-    await cli('submitters', 'update', '201', '--no-completed')
-    assert.equal(lastRequest.body.completed, false)
-  })
-
   test('--completed-redirect-url', async () => {
     await cli('submitters', 'update', '201', '--completed-redirect-url', 'https://done.com')
     assert.equal(lastRequest.body.completed_redirect_url, 'https://done.com')
@@ -181,19 +166,9 @@ describe('submitters update', () => {
     assert.equal(lastRequest.body.require_phone_2fa, true)
   })
 
-  test('--no-require-phone-2fa', async () => {
-    await cli('submitters', 'update', '201', '--no-require-phone-2fa')
-    assert.equal(lastRequest.body.require_phone_2fa, false)
-  })
-
   test('--require-email-2fa', async () => {
     await cli('submitters', 'update', '201', '--require-email-2fa')
     assert.equal(lastRequest.body.require_email_2fa, true)
-  })
-
-  test('--no-require-email-2fa', async () => {
-    await cli('submitters', 'update', '201', '--no-require-email-2fa')
-    assert.equal(lastRequest.body.require_email_2fa, false)
   })
 
   test('multiple flags combined', async () => {

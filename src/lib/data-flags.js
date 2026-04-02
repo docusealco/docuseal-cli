@@ -11,11 +11,8 @@ function resolveFiles(obj) {
     obj.forEach(item => resolveFiles(item))
   } else if (obj && typeof obj === 'object') {
     if (typeof obj.file === 'string' && !/^https?:\/\//.test(obj.file) && existsSync(obj.file)) {
-      const content = readFileSync(obj.file)
-      const base64 = Buffer.from(content).toString('base64')
-      const name = basename(obj.file)
-      obj.name = obj.name || name
-      obj.file = `data:application/octet-stream;base64,${base64}`
+      obj.name = obj.name || basename(obj.file)
+      obj.file = Buffer.from(readFileSync(obj.file)).toString('base64')
     }
 
     for (const val of Object.values(obj)) {
@@ -28,6 +25,7 @@ function resolveFiles(obj) {
 
 export function deepMerge(target, source) {
   for (const key of Object.keys(source)) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue
     if (Array.isArray(source[key]) && Array.isArray(target[key])) {
       for (let i = 0; i < source[key].length; i++) {
         if (source[key][i] !== undefined) {

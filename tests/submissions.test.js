@@ -84,11 +84,6 @@ describe('submissions list', () => {
     assert.equal(lastRequest.query.archived, 'true')
   })
 
-  test('--no-archived', async () => {
-    await cli('submissions', 'list', '--no-archived')
-    assert.equal(lastRequest.query.archived, 'false')
-  })
-
   test('--limit and --after', async () => {
     await cli('submissions', 'list', '--limit', '25', '--after', '100')
     assert.equal(lastRequest.query.limit, '25')
@@ -283,7 +278,7 @@ describe('submissions create-pdf', () => {
     assert.equal(lastRequest.method, 'POST')
     assert.equal(lastRequest.path, '/submissions/pdf')
     assert.equal(lastRequest.body.documents[0].name, 'docuseal-test.pdf')
-    assert.ok(lastRequest.body.documents[0].file.startsWith('data:application/octet-stream;base64,'))
+    assert.equal(lastRequest.body.documents[0].file, Buffer.from('fake-pdf').toString('base64'))
     assert.deepEqual(lastRequest.body.submitters, [{ email: 'a@b.com' }])
   })
 
@@ -318,7 +313,7 @@ describe('submissions create-pdf', () => {
       name: 'My Doc',
       documents: [{
         name: 'docuseal-test.pdf',
-        file: `data:application/octet-stream;base64,${b64}`,
+        file: b64,
       }],
       submitters: [
         { email: 'a@b.com', role: 'Signer', values: { 'First Name': 'John' }, metadata: { dept: 'Sales' } },
@@ -346,7 +341,7 @@ describe('submissions create-docx', () => {
     assert.equal(lastRequest.method, 'POST')
     assert.equal(lastRequest.path, '/submissions/docx')
     assert.equal(lastRequest.body.documents[0].name, 'docuseal-test.docx')
-    assert.ok(lastRequest.body.documents[0].file.startsWith('data:application/octet-stream;base64,'))
+    assert.equal(lastRequest.body.documents[0].file, Buffer.from('fake-docx').toString('base64'))
   })
 
   test('--merge-documents --no-remove-tags', async () => {
@@ -374,7 +369,7 @@ describe('submissions create-docx', () => {
     assert.deepEqual(lastRequest.body, {
       documents: [{
         name: 'docuseal-test.docx',
-        file: `data:application/octet-stream;base64,${b64}`,
+        file: b64,
       }],
       submitters: [{
         email: 'a@b.com',
@@ -441,8 +436,4 @@ describe('submissions documents', () => {
     assert.equal(lastRequest.query.merge, 'true')
   })
 
-  test('--no-merge', async () => {
-    await cli('submissions', 'documents', '42', '--no-merge')
-    assert.equal(lastRequest.query.merge, 'false')
-  })
 })

@@ -79,11 +79,6 @@ describe('templates list', () => {
     assert.equal(lastRequest.query.archived, 'true')
   })
 
-  test('--no-archived', async () => {
-    await cli('templates', 'list', '--no-archived')
-    assert.equal(lastRequest.query.archived, 'false')
-  })
-
   test('--limit and --after', async () => {
     await cli('templates', 'list', '--limit', '25', '--after', '100')
     assert.equal(lastRequest.query.limit, '25')
@@ -128,13 +123,13 @@ describe('templates update', () => {
     assert.equal(lastRequest.body.folder_name, 'Contracts')
   })
 
-  test('--archived', async () => {
-    await cli('templates', 'update', '1001', '--archived')
+  test('--archive', async () => {
+    await cli('templates', 'update', '1001', '--archive')
     assert.equal(lastRequest.body.archived, true)
   })
 
-  test('--no-archived', async () => {
-    await cli('templates', 'update', '1001', '--no-archived')
+  test('--unarchive', async () => {
+    await cli('templates', 'update', '1001', '--unarchive')
     assert.equal(lastRequest.body.archived, false)
   })
 
@@ -179,7 +174,7 @@ describe('templates create-pdf', () => {
     assert.equal(lastRequest.method, 'POST')
     assert.equal(lastRequest.path, '/templates/pdf')
     assert.equal(lastRequest.body.documents[0].name, 'docuseal-tpl-test.pdf')
-    assert.ok(lastRequest.body.documents[0].file.startsWith('data:application/octet-stream;base64,'))
+    assert.equal(lastRequest.body.documents[0].file, Buffer.from('fake-pdf').toString('base64'))
   })
 
   test('--name', async () => {
@@ -195,11 +190,6 @@ describe('templates create-pdf', () => {
   test('--external-id', async () => {
     await cli('templates', 'create-pdf', '--file', tmpFile, '--external-id', 'ext-1')
     assert.equal(lastRequest.body.external_id, 'ext-1')
-  })
-
-  test('--shared-link', async () => {
-    await cli('templates', 'create-pdf', '--file', tmpFile, '--shared-link')
-    assert.equal(lastRequest.body.shared_link, true)
   })
 
   test('--no-shared-link', async () => {
@@ -226,7 +216,7 @@ describe('templates create-pdf', () => {
       name: 'NDA',
       documents: [{
         name: 'docuseal-tpl-test.pdf',
-        file: `data:application/octet-stream;base64,${b64}`,
+        file: b64,
         fields: [
           { name: 'Name', type: 'text', role: 'Signer', required: 'true' },
           { name: 'Signature', type: 'signature', areas: [{ x: '0.1', y: '0.5', w: '0.3', h: '0.05', page: '1' }] },
@@ -253,7 +243,7 @@ describe('templates create-docx', () => {
     assert.equal(lastRequest.method, 'POST')
     assert.equal(lastRequest.path, '/templates/docx')
     assert.equal(lastRequest.body.documents[0].name, 'docuseal-tpl-test.docx')
-    assert.ok(lastRequest.body.documents[0].file.startsWith('data:application/octet-stream;base64,'))
+    assert.equal(lastRequest.body.documents[0].file, Buffer.from('fake-docx').toString('base64'))
   })
 
   test('--name and --folder-name', async () => {
@@ -267,9 +257,9 @@ describe('templates create-docx', () => {
     assert.equal(lastRequest.body.external_id, 'ext-2')
   })
 
-  test('--shared-link', async () => {
-    await cli('templates', 'create-docx', '--file', tmpFile, '--shared-link')
-    assert.equal(lastRequest.body.shared_link, true)
+  test('--no-shared-link', async () => {
+    await cli('templates', 'create-docx', '--file', tmpFile, '--no-shared-link')
+    assert.equal(lastRequest.body.shared_link, false)
   })
 
   test('-d documents with fields and areas', async () => {
@@ -291,7 +281,7 @@ describe('templates create-docx', () => {
       name: 'Contract',
       documents: [{
         name: 'docuseal-tpl-test.docx',
-        file: `data:application/octet-stream;base64,${b64}`,
+        file: b64,
         fields: [
           { name: 'Date', type: 'date', role: 'Signer', required: 'true' },
           { name: 'Signature', type: 'signature', areas: [{ x: '0.2', y: '0.8', w: '0.3', h: '0.05', page: '2' }] },
@@ -351,9 +341,9 @@ describe('templates create-html', () => {
     assert.equal(lastRequest.body.folder_name, 'Legal')
   })
 
-  test('--shared-link', async () => {
-    await cli('templates', 'create-html', '--html', '<p>x</p>', '--shared-link')
-    assert.equal(lastRequest.body.shared_link, true)
+  test('--no-shared-link', async () => {
+    await cli('templates', 'create-html', '--html', '<p>x</p>', '--no-shared-link')
+    assert.equal(lastRequest.body.shared_link, false)
   })
 
   test('-d documents with html', async () => {
@@ -424,9 +414,9 @@ describe('templates merge', () => {
     assert.equal(lastRequest.body.external_id, 'ext-5')
   })
 
-  test('--shared-link', async () => {
-    await cli('templates', 'merge', '--shared-link', '-d', 'template_ids[]=1')
-    assert.equal(lastRequest.body.shared_link, true)
+  test('--no-shared-link', async () => {
+    await cli('templates', 'merge', '--no-shared-link', '-d', 'template_ids[]=1')
+    assert.equal(lastRequest.body.shared_link, false)
   })
 })
 
@@ -442,11 +432,6 @@ describe('templates update-documents', () => {
   test('--merge', async () => {
     await cli('templates', 'update-documents', '1001', '--merge')
     assert.equal(lastRequest.body.merge, true)
-  })
-
-  test('--no-merge', async () => {
-    await cli('templates', 'update-documents', '1001', '--no-merge')
-    assert.equal(lastRequest.body.merge, false)
   })
 
   test('-d documents with --merge', async () => {
