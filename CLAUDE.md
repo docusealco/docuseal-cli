@@ -31,7 +31,7 @@ docuseal-cli/
       configure.js           # configure command (interactive setup + --list)
     lib/
       api.js                 # createClient(), onError() — all HTTP goes here
-      config.js              # ~/.docuseal/config.json read/write
+      config.js              # ~/.config/docuseal/credentials.json read/write
       output.js              # renderJson
       data-flags.js          # parseDataFlags(), deepMerge()
       global-options.js      # withGlobalOptions(), formatDataParams(), formatExamples()
@@ -49,7 +49,7 @@ docuseal-cli/
 - Runtime: Node.js (ESM)
 - CLI framework: commander
 - HTTP: `@docuseal/api` package
-- Config: JSON (read/write ~/.docuseal/config.json)
+- Config: JSON (read/write ~/.config/docuseal/credentials.json)
 - Bundling: esbuild
 
 ---
@@ -157,7 +157,7 @@ Mapping rules:
 
 ## Config
 
-File: `~/.docuseal/config.json`
+File: `~/.config/docuseal/credentials.json`
 Fields: `apiKey`, `server`
 Env var overrides: `DOCUSEAL_API_KEY`, `DOCUSEAL_SERVER`
 Priority: CLI flag > env var > config file

@@ -1,9 +1,19 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from 'fs'
 import { homedir } from 'os'
 import { join } from 'path'
 
-const CONFIG_DIR = join(homedir(), '.docuseal')
-const CONFIG_FILE = join(CONFIG_DIR, 'config.json')
+function getConfigDir() {
+  if (process.env.XDG_CONFIG_HOME) {
+    return join(process.env.XDG_CONFIG_HOME, 'docuseal')
+  } else if (process.platform === 'win32' && process.env.APPDATA) {
+    return join(process.env.APPDATA, 'docuseal')
+  } else {
+    return join(homedir(), '.config', 'docuseal')
+  }
+}
+
+const CONFIG_DIR = getConfigDir()
+const CONFIG_FILE = join(CONFIG_DIR, 'credentials.json')
 
 const SERVER_MAP = {
   global: 'https://api.docuseal.com',
@@ -46,6 +56,8 @@ export function loadConfig(overrides) {
 }
 
 export function saveConfig(config) {
-  if (!existsSync(CONFIG_DIR)) mkdirSync(CONFIG_DIR, { recursive: true })
-  writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) + '\n')
+  if (!existsSync(CONFIG_DIR)) mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 })
+
+  writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) + '\n', { mode: 0o600 })
+  chmodSync(CONFIG_FILE, 0o600)
 }

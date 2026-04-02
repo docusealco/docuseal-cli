@@ -1,13 +1,13 @@
 <p align="center">
   <a href="https://www.docuseal.com">
-    <img width="200" src="https://www.docuseal.com/logo.svg" alt="DocuSeal Logo">
+    <img width="70" src="https://www.docuseal.com/logo.svg" alt="DocuSeal Logo">
   </a>
 </p>
 
 <h1 align="center">DocuSeal CLI</h1>
 
 <p align="center">
-  Manage templates, submissions, and submitters from the terminal.
+  Manage e-signature templates, submissions, and submitters from the terminal.
 </p>
 
 <p align="center">
@@ -34,7 +34,7 @@ The `configure` command will prompt for your API token and server:
 ```
 Server [global/europe/url] (default: global): global
 Enter your API token: xxxxxxxxxx
-✓ Saved to ~/.docuseal/config.json
+✓ Saved to ~/.config/docuseal/credentials.json
 ```
 
 Get your API token from [DocuSeal Console](https://console.docuseal.com/api) or [DocuSeal EU Console](https://console.docuseal.eu/api).
@@ -101,7 +101,7 @@ export DOCUSEAL_SERVER=global    # global, europe, or full URL
 
 ### Config File
 
-Stored at `~/.docuseal/config.json`:
+Stored at `~/.config/docuseal/credentials.json`:
 
 ```json
 {
@@ -416,6 +416,16 @@ docuseal templates create-pdf --help
 docuseal submissions create --help
 docuseal submitters update --help
 ```
+
+---
+
+## Configuration
+
+| Item | Path | Notes |
+|------|------|-------|
+| Config directory | `~/.config/docuseal/` | Respects `$XDG_CONFIG_HOME` on Linux, `%APPDATA%` on Windows |
+| Credentials | `~/.config/docuseal/credentials.json` | `0600` permissions (owner read/write only) |
+| Install directory | Global npm prefix | Via `npm install -g docuseal` |
 
 ---
 

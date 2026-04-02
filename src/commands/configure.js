@@ -60,6 +60,6 @@ export function registerConfigure(program) {
       }
 
       saveConfig({ apiKey, server: resolvedServer })
-      renderSuccess('Saved to ~/.docuseal/config.json')
+      renderSuccess('Saved to ~/.config/docuseal/credentials.json')
     })
 }
