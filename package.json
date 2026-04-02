@@ -3,8 +3,14 @@
   "version": "1.0.0",
   "description": "DocuSeal CLI — manage esignature templates, submissions, and submitters from the terminal",
   "type": "module",
+  "homepage": "https://www.docuseal.com",
+  "author": "DocuSeal <support@docuseal.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/docusealco/docuseal-cli.git"
+  },
   "bin": {
-    "docuseal": "./bin/run.js"
+    "docuseal": "bin/run.js"
   },
   "scripts": {
     "dev": "node src/index.js",
