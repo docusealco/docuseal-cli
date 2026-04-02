@@ -13,7 +13,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/docuseal"><img src="https://img.shields.io/npm/v/docuseal.svg" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/docuseal"><img src="https://img.shields.io/npm/dm/docuseal.svg" alt="npm downloads"></a>
-  <a href="https://github.com/docusealco/docuseal-cli/blob/main/LICENSE.md"><img src="https://img.shields.io/npm/l/docuseal.svg" alt="license"></a>
+  <a href="https://github.com/docusealco/docuseal-cli/blob/master/LICENSE.md"><img src="https://img.shields.io/npm/l/docuseal.svg" alt="license"></a>
 </p>
 
 ---
