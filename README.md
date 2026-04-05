@@ -7,7 +7,7 @@
 <h1 align="center">DocuSeal CLI</h1>
 
 <p align="center">
-  Manage e-signature templates, submissions, and submitters from the terminal.
+  Manage e-signature templates, submissions, and submitters with the terminal or AI agent.
 </p>
 
 <p align="center">
