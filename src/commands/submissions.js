@@ -18,7 +18,7 @@ export function registerSubmissionCommands(program) {
     .option('--archived', 'Get only archived submissions.')
     .option('--active', 'Get only active submissions.')
     .addOption(new Option('-l, --limit <value>', 'The number of submissions to return. Default value is 10. Maximum value is 100.').argParser(parseInt))
-    .addOption(new Option('-a, --after <value>', 'The unique identifier of the submission to start the list from. It allows you to receive only submissions with an ID greater than the specified value. Pass ID value from the `pagination.next` response to load the next batch of submissions.').argParser(parseInt))
+    .addOption(new Option('--after <value>', 'The unique identifier of the submission to start the list from. It allows you to receive only submissions with an ID greater than the specified value. Pass ID value from the `pagination.next` response to load the next batch of submissions.').argParser(parseInt))
     .addOption(new Option('--before <value>', 'The unique identifier of the submission that marks the end of the list. It allows you to receive only submissions with an ID less than the specified value.').argParser(parseInt))
     .option('-d, --data <value>', 'Set parameters using bracket notation or JSON', (val, prev) => prev.concat([val]), [])
     .addHelpText('afterAll', formatExamples([

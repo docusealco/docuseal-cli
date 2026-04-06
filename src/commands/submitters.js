@@ -16,7 +16,7 @@ export function registerSubmitterCommands(program) {
     .addOption(new Option('--completed-before <value>', 'The date and time string value to filter submitters that completed the submission before the specified date and time.'))
     .addOption(new Option('--external-id <value>', 'The unique applications-specific identifier provided for a submitter when initializing a signature request. It allows you to receive only submitters with a specified external id.'))
     .addOption(new Option('-l, --limit <value>', 'The number of submitters to return. Default value is 10. Maximum value is 100.').argParser(parseInt))
-    .addOption(new Option('-a, --after <value>', 'The unique identifier of the submitter to start the list from. It allows you to receive only submitters with id greater than the specified value. Pass ID value from the `pagination.next` response to load the next batch of submitters.').argParser(parseInt))
+    .addOption(new Option('--after <value>', 'The unique identifier of the submitter to start the list from. It allows you to receive only submitters with id greater than the specified value. Pass ID value from the `pagination.next` response to load the next batch of submitters.').argParser(parseInt))
     .addOption(new Option('--before <value>', 'The unique identifier of the submitter to end the list with. It allows you to receive only submitters with id less than the specified value.').argParser(parseInt))
     .option('-d, --data <value>', 'Set parameters using bracket notation or JSON', (val, prev) => prev.concat([val]), [])
     .addHelpText('afterAll', formatExamples([
