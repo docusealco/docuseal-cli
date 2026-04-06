@@ -1,6 +1,6 @@
 {
   "name": "docuseal",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "DocuSeal CLI — manage esignature templates, submissions, and submitters from the terminal",
   "type": "module",
   "homepage": "https://www.docuseal.com",
@@ -20,7 +20,8 @@
   },
   "files": [
     "dist",
-    "bin"
+    "bin",
+    "skills"
   ],
   "keywords": [
     "docuseal",

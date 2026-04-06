@@ -122,6 +122,18 @@ Stored at `~/.config/docuseal/credentials.json`:
 
 ---
 
+## Agent Skills
+
+This CLI ships with an [agent skill](skills/docuseal-cli/SKILL.md) that teaches AI coding agents (Cursor, Claude Code, Windsurf, etc.) how to use the DocuSeal CLI effectively — including non-interactive flags, output formats, and common pitfalls.
+
+Install skills from the [central skills repository](https://github.com/docusealco/docuseal-agent-skills):
+
+```sh
+npx skills add docusealco/docuseal-agent-skills
+```
+
+---
+
 ## Templates
 
 ### List Templates
