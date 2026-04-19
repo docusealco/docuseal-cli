@@ -1,6 +1,6 @@
 {
   "name": "docuseal",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "DocuSeal CLI — manage esignature templates, submissions, and submitters from the terminal",
   "type": "module",
   "homepage": "https://www.docuseal.com",
@@ -15,8 +15,8 @@
   "scripts": {
     "dev": "node src/index.js",
     "build": "esbuild src/index.js --bundle --outfile=dist/index.js --platform=node --format=esm --packages=external",
-    "test": "node --test tests/",
-    "prepublishOnly": "npm run build"
+    "test": "node --test tests/*.test.js",
+    "prepublishOnly": "npm test && npm run build"
   },
   "files": [
     "dist",

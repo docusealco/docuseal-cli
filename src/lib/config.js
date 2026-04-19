@@ -25,6 +25,8 @@ export function resolveServer(input) {
 
   const url = input.replace(/\/+$/, '')
 
+  if (Object.values(SERVER_MAP).includes(url)) return url
+
   return url.endsWith('/api') ? url : url + '/api'
 }
 
