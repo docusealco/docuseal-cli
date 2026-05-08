@@ -12,7 +12,7 @@ export function registerSubmissionCommands(program) {
     .description('List all submissions')
     .addOption(new Option('--template-id <value>', 'The template ID allows you to receive only the submissions created from that specific template.').argParser(parseInt))
     .addOption(new Option('--status <value>', 'Filter submissions by status.').choices(['pending', 'completed', 'declined', 'expired']))
-    .addOption(new Option('--q <value>', 'Filter submissions based on submitters name, email or phone partial match.'))
+    .addOption(new Option('--q <value>', "Filter submissions based on submitter's name, email or phone partial match."))
     .addOption(new Option('--slug <value>', 'Filter submissions by unique slug.'))
     .addOption(new Option('--template-folder <value>', 'Filter submissions by template folder name.'))
     .option('--archived', 'Get only archived submissions.')

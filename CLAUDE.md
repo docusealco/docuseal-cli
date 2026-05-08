@@ -105,8 +105,10 @@ Mapping rules:
 - Request body complex params (arrays, objects) → skip, users pass them via `-d` bracket notation
 - When a custom flag like `--file` maps to a complex body param (e.g. `documents`), that param's `makeOptionMandatory()` is removed
 - Path params like `{id}` → `.argument('<id>', '...')`
-- Param descriptions come from OpenAPI `description` field
+- Param descriptions come from OpenAPI `description` field — but CLI descriptions may intentionally differ from the spec (e.g. "search" instead of "partial match"). Do not blindly copy OpenAPI descriptions; check existing CLI wording first.
+- Field type enums in data params help may not list all OpenAPI types — only user-facing types are included (e.g. `heading` and `strikethrough` are omitted).
 - `snake_case` body keys map to `--kebab-case` flags, converted back in the action handler
+- When updating from OpenAPI, also update `skills/docuseal-cli/references/` markdown files to stay in sync.
 
 ---
 

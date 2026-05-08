@@ -12,7 +12,7 @@ export function registerTemplateCommands(program) {
     .description('List all templates')
     .addOption(new Option('--q <value>', 'Filter templates based on the name search.'))
     .addOption(new Option('--slug <value>', 'Filter templates by unique slug.'))
-    .addOption(new Option('--external-id <value>', 'The unique applications-specific identifier provided for the template via API or Embedded template form builder. It allows you to receive only templates with your specified external id.'))
+    .addOption(new Option('--external-id <value>', 'The unique application-specific identifier provided for the template via API or Embedded template form builder. It allows you to receive only templates with your specified external ID.'))
     .addOption(new Option('--folder <value>', 'Filter templates by folder name.'))
     .option('--archived', 'Get only archived templates.')
     .option('--active', 'Get only active templates.')
@@ -105,7 +105,7 @@ export function registerTemplateCommands(program) {
       ['documents[N][name]', 'Document name'],
       ['documents[N][file]', 'Base64-encoded file or URL'],
       ['documents[N][fields][M][name]', 'Field name'],
-      ['documents[N][fields][M][type]', 'text, signature, initials, date, number, image, checkbox, multiple, file, radio, select, cells, stamp, payment, phone'],
+      ['documents[N][fields][M][type]', 'text, signature, initials, date, number, image, checkbox, multiple, file, radio, select, cells, stamp, payment, phone, verification, kba'],
       ['documents[N][fields][M][role]', 'Signer role name'],
       ['documents[N][fields][M][required]', 'Required (true/false)'],
       ['documents[N][fields][M][title]', 'Display title'],
@@ -156,7 +156,7 @@ export function registerTemplateCommands(program) {
       ['documents[N][name]', 'Document name'],
       ['documents[N][file]', 'Base64-encoded file or URL'],
       ['documents[N][fields][M][name]', 'Field name'],
-      ['documents[N][fields][M][type]', 'text, signature, initials, date, number, image, checkbox, multiple, file, radio, select, cells, stamp, payment, phone'],
+      ['documents[N][fields][M][type]', 'text, signature, initials, date, number, image, checkbox, multiple, file, radio, select, cells, stamp, payment, phone, verification, kba'],
       ['documents[N][fields][M][role]', 'Signer role name'],
       ['documents[N][fields][M][required]', 'Required (true/false)'],
       ['documents[N][fields][M][title]', 'Display title'],
