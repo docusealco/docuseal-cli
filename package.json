@@ -36,7 +36,7 @@
     "esbuild": "^0.27.4"
   },
   "dependencies": {
-    "@docuseal/api": "^1.0.22",
+    "@docuseal/api": "^1.0.23",
     "commander": "^13.0.0",
     "qs": "^6.15.0"
   }
