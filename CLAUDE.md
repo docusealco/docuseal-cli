@@ -5,7 +5,7 @@
 Static command files with explicit flags and action handlers. No runtime code generation.
 
 - `src/commands/templates.js` — all template commands (list, retrieve, update, archive, create-pdf, create-docx, create-html, clone, merge, update-documents)
-- `src/commands/submissions.js` — all submission commands (list, retrieve, archive, create, send-emails, create-pdf, create-docx, create-html, documents)
+- `src/commands/submissions.js` — all submission commands (list, retrieve, update, archive, create, send-emails, create-pdf, create-docx, create-html, documents)
 - `src/commands/submitters.js` — all submitter commands (list, retrieve, update)
 - `src/commands/configure.js` — interactive config setup
 - `src/lib/` — HTTP client, config, output helpers, data-flags parser, global options

@@ -113,6 +113,37 @@ describe('submissions retrieve', () => {
   })
 })
 
+// --- submissions update ---
+
+describe('submissions update', () => {
+  test('--name', async () => {
+    await cli('submissions', 'update', '42', '--name', 'Q3 Contract')
+    assert.equal(lastRequest.method, 'PUT')
+    assert.equal(lastRequest.path, '/submissions/42')
+    assert.equal(lastRequest.body.name, 'Q3 Contract')
+  })
+
+  test('--expire-at', async () => {
+    await cli('submissions', 'update', '42', '--expire-at', '2025-12-31')
+    assert.equal(lastRequest.body.expire_at, '2025-12-31')
+  })
+
+  test('--archive', async () => {
+    await cli('submissions', 'update', '42', '--archive')
+    assert.equal(lastRequest.body.archived, true)
+  })
+
+  test('--unarchive', async () => {
+    await cli('submissions', 'update', '42', '--unarchive')
+    assert.equal(lastRequest.body.archived, false)
+  })
+
+  test('-d expire_at null', async () => {
+    await cli('submissions', 'update', '42', '-d', '{"expire_at":null}')
+    assert.equal(lastRequest.body.expire_at, null)
+  })
+})
+
 // --- submissions archive ---
 
 describe('submissions archive', () => {

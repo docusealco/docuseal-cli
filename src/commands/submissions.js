@@ -53,6 +53,30 @@ export function registerSubmissionCommands(program) {
       createClient(opts).getSubmission(id).then(renderJson, onError)
     })
 
+  withGlobalOptions(topic.command('update'))
+    .description('Update a submission')
+    .argument('<id>', 'The id of the submission')
+    .addOption(new Option('--name <value>', 'The name of the submission.'))
+    .addOption(new Option('--expire-at <value>', 'The date and time when the submission will expire and no longer be available for signature.'))
+    .option('--archive', 'Archive the submission.')
+    .option('--unarchive', 'Unarchive the submission.')
+    .option('-d, --data <value>', 'Set body parameters using bracket notation or JSON', (val, prev) => prev.concat([val]), [])
+    .addHelpText('afterAll', formatExamples([
+      'docuseal submissions update 502 --name "Q3 Contract"',
+      'docuseal submissions update 502 --expire-at "2025-12-31 23:59"',
+      'docuseal submissions update 502 --unarchive',
+    ]))
+    .action(async (id, opts) => {
+      const body = {}
+      if (opts.name !== undefined) body['name'] = opts.name
+      if (opts.expireAt !== undefined) body['expire_at'] = opts.expireAt
+      if (opts.archive) body['archived'] = true
+      if (opts.unarchive) body['archived'] = false
+      if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
+
+      createClient(opts).updateSubmission(id, body).then(renderJson, onError)
+    })
+
   withGlobalOptions(topic.command('archive'))
     .description('Archive a submission')
     .argument('<id>', 'The id of the submission')
@@ -94,6 +118,7 @@ export function registerSubmissionCommands(program) {
       ['submitters[N][order]', 'Signing order (0, 1, 2...)'],
       ['submitters[N][require_phone_2fa]', 'Require phone 2FA (true/false)'],
       ['submitters[N][require_email_2fa]', 'Require email 2FA (true/false)'],
+      ['submitters[N][invite_by]', 'Role name of inviting party'],
       ['submitters[N][message][subject]', 'Per-submitter email subject'],
       ['submitters[N][message][body]', 'Per-submitter email body'],
       ['submitters[N][fields][M][name]', 'Field name (required)'],

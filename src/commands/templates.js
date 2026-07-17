@@ -16,6 +16,7 @@ export function registerTemplateCommands(program) {
     .addOption(new Option('--folder <value>', 'Filter templates by folder name.'))
     .option('--archived', 'Get only archived templates.')
     .option('--active', 'Get only active templates.')
+    .option('--shared', 'List templates shared with test mode.')
     .addOption(new Option('-l, --limit <value>', 'The number of templates to return. Default value is 10. Maximum value is 100.').argParser(parseInt))
     .addOption(new Option('--after <value>', 'The unique identifier of the template to start the list from. It allows you to receive only templates with id greater than the specified value. Pass ID value from the `pagination.next` response to load the next batch of templates.').argParser(parseInt))
     .addOption(new Option('--before <value>', 'The unique identifier of the template to end the list with. It allows you to receive only templates with id less than the specified value.').argParser(parseInt))
@@ -33,6 +34,7 @@ export function registerTemplateCommands(program) {
       if (opts.folder !== undefined) query['folder'] = opts.folder
       if (opts.archived) query['archived'] = true
       if (opts.active) query['archived'] = false
+      if (opts.shared) query['shared'] = true
       if (opts.limit !== undefined) query['limit'] = opts.limit
       if (opts.after !== undefined) query['after'] = opts.after
       if (opts.before !== undefined) query['before'] = opts.before
