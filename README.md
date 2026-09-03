@@ -132,6 +132,12 @@ Install skills from the [central skills repository](https://github.com/docusealc
 npx skills add docusealco/docuseal-agent-skills
 ```
 
+For [Hermes Agent](https://hermes-agent.nousresearch.com):
+
+```sh
+hermes skills install docusealco/docuseal-agent-skills/skills/docuseal-cli
+```
+
 ---
 
 ## Templates
