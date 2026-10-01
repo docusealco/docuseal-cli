@@ -4,9 +4,9 @@ import { basename } from 'path'
 
 export function parseDataFlags(pairs) {
   const jsonPairs = pairs.filter(p => p.startsWith('{'))
-  const qsPairs = pairs.filter(p => !p.startsWith('{'))
+  const qsPairs = pairs.filter(p => !p.startsWith('{')).map(encodePair)
 
-  let result = qsPairs.length > 0 ? parse(qsPairs.join('&'), { depth: 10 }) : {}
+  let result = qsPairs.length > 0 ? parse(qsPairs.join('&'), { depth: 10, arrayLimit: Infinity }) : {}
 
   for (const json of jsonPairs) {
     result = deepMerge(result, JSON.parse(json))
@@ -15,13 +15,26 @@ export function parseDataFlags(pairs) {
   return resolveFiles(result)
 }
 
+function encodePair(pair) {
+  const bracketEqualsPos = pair.indexOf(']=')
+  const pos = bracketEqualsPos === -1 ? pair.indexOf('=') : bracketEqualsPos + 1
+
+  if (pos === -1) return encodeURIComponent(pair)
+
+  return encodeURIComponent(pair.slice(0, pos)) + '=' + encodeURIComponent(pair.slice(pos + 1))
+}
+
 function resolveFiles(obj) {
   if (Array.isArray(obj)) {
     obj.forEach(item => resolveFiles(item))
   } else if (obj && typeof obj === 'object') {
-    if (typeof obj.file === 'string' && !/^https?:\/\//.test(obj.file) && existsSync(obj.file)) {
-      obj.name = obj.name || basename(obj.file)
-      obj.file = Buffer.from(readFileSync(obj.file)).toString('base64')
+    if (typeof obj.file === 'string' && !/^https?:\/\//.test(obj.file)) {
+      if (existsSync(obj.file)) {
+        obj.name = obj.name || basename(obj.file)
+        obj.file = Buffer.from(readFileSync(obj.file)).toString('base64')
+      } else if (/^\S+\.[A-Za-z0-9]{1,8}$/.test(obj.file)) {
+        throw new Error(`File not found: ${obj.file}`)
+      }
     }
 
     for (const val of Object.values(obj)) {

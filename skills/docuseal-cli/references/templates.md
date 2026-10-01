@@ -14,7 +14,7 @@ List all templates.
 | `--active` | Get only active templates |
 | `--shared` | List templates shared with test mode |
 | `-l, --limit <value>` | Number of results (default 10, max 100) |
-| `--after <value>` | Pagination cursor — pass `pagination.next` from previous response |
+| `-a, --after <value>` | Pagination cursor — pass `pagination.next` from previous response |
 | `--before <value>` | Pagination end cursor |
 
 ```bash
@@ -92,7 +92,7 @@ See [PDF / DOCX Field Tags](field-tags.md) for embedded `{{...}}` field syntax i
 | Data param (`-d`) | Description |
 |---|---|
 | `documents[N][name]` | Document name |
-| `documents[N][file]` | Local file path or URL |
+| `documents[N][file]` | Local file path, URL, or base64-encoded content |
 | `documents[N][fields][M][name]` | Field name |
 | `documents[N][fields][M][type]` | text, signature, initials, date, number, image, checkbox, multiple, file, radio, select, cells, stamp, payment, phone, verification, kba |
 | `documents[N][fields][M][role]` | Signer role name |
@@ -134,7 +134,11 @@ See [PDF / DOCX Field Tags](field-tags.md) for embedded `{{...}}` field syntax i
 | `--shared-link` | Make available via shared link |
 | `--no-shared-link` | Disable shared link |
 
-Supports same `-d documents[N]...` data params as `create-pdf`.
+| Data param (`-d`) | Description |
+|---|---|
+| `documents[N][name]` | Document name |
+| `documents[N][file]` | Local file path, URL, or base64-encoded content |
+| `documents[N][dynamic]` | Dynamic document with editable content and `[[variables]]` (true/false) |
 
 ```bash
 docuseal templates create-docx --file template.docx --name "Contract"

@@ -65,6 +65,43 @@ describe('JSON -d support', () => {
   })
 })
 
+describe('bracket notation values', () => {
+  test('keeps + in phone numbers', () => {
+    const result = parseDataFlags(['submitters[0][phone]=+1234567890'])
+    assert.deepEqual(result, { submitters: [{ phone: '+1234567890' }] })
+  })
+
+  test('keeps base64 content intact', () => {
+    const result = parseDataFlags(['documents[0][file]=+/++JVBERi0xLjQ='])
+    assert.equal(result.documents[0].file, '+/++JVBERi0xLjQ=')
+  })
+
+  test('keeps & in URL query strings', () => {
+    const result = parseDataFlags(['documents[0][file]=https://example.com/doc.pdf?a=1&b=2'])
+    assert.equal(result.documents[0].file, 'https://example.com/doc.pdf?a=1&b=2')
+  })
+
+  test('keeps % literally', () => {
+    const result = parseDataFlags(['submitters[0][values][Note]=50%25 off'])
+    assert.equal(result.submitters[0].values.Note, '50%25 off')
+  })
+
+  test('keeps special characters in keys', () => {
+    const result = parseDataFlags(['submitters[0][values][Q&A + Notes]=yes'])
+    assert.deepEqual(result.submitters[0].values, { 'Q&A + Notes': 'yes' })
+  })
+
+  test('keeps = in values', () => {
+    const result = parseDataFlags(['documents[0][html]=<p class="a">x=1</p>'])
+    assert.equal(result.documents[0].html, '<p class="a">x=1</p>')
+  })
+
+  test('collects [] arrays across pairs', () => {
+    const result = parseDataFlags(['template_ids[]=1001', 'template_ids[]=1002'])
+    assert.deepEqual(result, { template_ids: ['1001', '1002'] })
+  })
+})
+
 describe('resolveFiles', () => {
   let tmpFile
 
@@ -91,9 +128,8 @@ describe('resolveFiles', () => {
     assert.equal(result.documents[0].name, 'My Doc')
   })
 
-  test('leaves file as string when path does not exist', () => {
-    const result = parseDataFlags(['documents[0][file]=/nonexistent/file.pdf'])
-    assert.equal(result.documents[0].file, '/nonexistent/file.pdf')
+  test('throws when file path does not exist', () => {
+    assert.throws(() => parseDataFlags(['documents[0][file]=/nonexistent/file.pdf']), /File not found: \/nonexistent\/file\.pdf/)
   })
 
   test('resolves file in nested array items', () => {

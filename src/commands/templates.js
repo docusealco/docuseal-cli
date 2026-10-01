@@ -18,7 +18,7 @@ export function registerTemplateCommands(program) {
     .option('--active', 'Get only active templates.')
     .option('--shared', 'List templates shared with test mode.')
     .addOption(new Option('-l, --limit <value>', 'The number of templates to return. Default value is 10. Maximum value is 100.').argParser(parseInt))
-    .addOption(new Option('--after <value>', 'The unique identifier of the template to start the list from. It allows you to receive only templates with id greater than the specified value. Pass ID value from the `pagination.next` response to load the next batch of templates.').argParser(parseInt))
+    .addOption(new Option('-a, --after <value>', 'The unique identifier of the template to start the list from. It allows you to receive only templates with id greater than the specified value. Pass ID value from the `pagination.next` response to load the next batch of templates.').argParser(parseInt))
     .addOption(new Option('--before <value>', 'The unique identifier of the template to end the list with. It allows you to receive only templates with id less than the specified value.').argParser(parseInt))
     .option('-d, --data <value>', 'Set parameters using bracket notation or JSON', (val, prev) => prev.concat([val]), [])
     .addHelpText('afterAll', formatExamples([
@@ -105,7 +105,7 @@ export function registerTemplateCommands(program) {
     .option('-d, --data <value>', 'Set body parameters using bracket notation or JSON', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['documents[N][name]', 'Document name'],
-      ['documents[N][file]', 'Base64-encoded file or URL'],
+      ['documents[N][file]', 'Local file path, URL, or base64-encoded content'],
       ['documents[N][fields][M][name]', 'Field name'],
       ['documents[N][fields][M][type]', 'text, signature, initials, date, number, image, checkbox, multiple, file, radio, select, cells, stamp, payment, phone, verification, kba'],
       ['documents[N][fields][M][role]', 'Signer role name'],
@@ -156,7 +156,8 @@ export function registerTemplateCommands(program) {
     .option('-d, --data <value>', 'Set body parameters using bracket notation or JSON', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['documents[N][name]', 'Document name'],
-      ['documents[N][file]', 'Base64-encoded file or URL'],
+      ['documents[N][file]', 'Local file path, URL, or base64-encoded content'],
+      ['documents[N][dynamic]', 'Dynamic document with editable content and [[variables]] (true/false)'],
       ['documents[N][fields][M][name]', 'Field name'],
       ['documents[N][fields][M][type]', 'text, signature, initials, date, number, image, checkbox, multiple, file, radio, select, cells, stamp, payment, phone, verification, kba'],
       ['documents[N][fields][M][role]', 'Signer role name'],
@@ -286,7 +287,7 @@ export function registerTemplateCommands(program) {
     .option('-d, --data <value>', 'Set body parameters using bracket notation or JSON', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['documents[N][name]', 'Document name'],
-      ['documents[N][file]', 'Base64-encoded PDF/DOCX or URL'],
+      ['documents[N][file]', 'Local file path, URL, or base64-encoded content'],
       ['documents[N][html]', 'HTML template with field tags'],
       ['documents[N][position]', 'Position in template'],
       ['documents[N][replace]', 'Replace existing document (true/false)'],

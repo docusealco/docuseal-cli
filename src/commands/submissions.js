@@ -1,5 +1,6 @@
 import { Option } from 'commander'
 import { readFileSync } from 'fs'
+import { basename, extname } from 'path'
 import { createClient, onError } from '../lib/api.js'
 import { renderJson } from '../lib/output.js'
 import { parseDataFlags, deepMerge } from '../lib/data-flags.js'
@@ -18,7 +19,7 @@ export function registerSubmissionCommands(program) {
     .option('--archived', 'Get only archived submissions.')
     .option('--active', 'Get only active submissions.')
     .addOption(new Option('-l, --limit <value>', 'The number of submissions to return. Default value is 10. Maximum value is 100.').argParser(parseInt))
-    .addOption(new Option('--after <value>', 'The unique identifier of the submission to start the list from. It allows you to receive only submissions with an ID greater than the specified value. Pass ID value from the `pagination.next` response to load the next batch of submissions.').argParser(parseInt))
+    .addOption(new Option('-a, --after <value>', 'The unique identifier of the submission to start the list from. It allows you to receive only submissions with an ID greater than the specified value. Pass ID value from the `pagination.next` response to load the next batch of submissions.').argParser(parseInt))
     .addOption(new Option('--before <value>', 'The unique identifier of the submission that marks the end of the list. It allows you to receive only submissions with an ID less than the specified value.').argParser(parseInt))
     .option('-d, --data <value>', 'Set parameters using bracket notation or JSON', (val, prev) => prev.concat([val]), [])
     .addHelpText('afterAll', formatExamples([
@@ -192,6 +193,8 @@ export function registerSubmissionCommands(program) {
     .option('-d, --data <value>', 'Set body parameters using bracket notation or JSON', (val, prev) => prev.concat([val]), [])
     .addHelpText('after', formatDataParams([
       ['template_ids[]', 'Template ID to use alongside provided documents'],
+      ['documents[N][name]', 'Document name'],
+      ['documents[N][file]', 'Local file path, URL, or base64-encoded content'],
       ['documents[N][position]', 'Position in template'],
       ['submitters[N][name]', 'Full name'],
       ['submitters[N][role]', 'Role name'],
@@ -265,6 +268,8 @@ export function registerSubmissionCommands(program) {
     .addHelpText('after', formatDataParams([
       ['variables[key]', 'Template variable'],
       ['template_ids[]', 'Template ID to use alongside provided documents'],
+      ['documents[N][name]', 'Document name'],
+      ['documents[N][file]', 'Local file path, URL, or base64-encoded content'],
       ['documents[N][position]', 'Position in template'],
       ['submitters[N][name]', 'Full name'],
       ['submitters[N][role]', 'Role name'],
@@ -379,7 +384,9 @@ export function registerSubmissionCommands(program) {
       if (opts.replyTo !== undefined) body['reply_to'] = opts.replyTo
       if (opts.expireAt !== undefined) body['expire_at'] = opts.expireAt
       if (opts.mergeDocuments) body['merge_documents'] = true
-      if (opts.file !== undefined) body.html = readFileSync(opts.file, 'utf8')
+      if (opts.file !== undefined) {
+        body.documents = [{ name: basename(opts.file, extname(opts.file)), html: readFileSync(opts.file, 'utf8') }]
+      }
       if (opts.data.length > 0) deepMerge(body, parseDataFlags(opts.data))
 
       createClient(opts).createSubmissionFromHtml(body).then(renderJson, onError)

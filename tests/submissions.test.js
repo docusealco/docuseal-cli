@@ -430,7 +430,7 @@ describe('submissions create-html', () => {
     await cli('submissions', 'create-html', '--file', tmpFile, '-d', 'submitters[0][email]=a@b.com')
     assert.equal(lastRequest.method, 'POST')
     assert.equal(lastRequest.path, '/submissions/html')
-    assert.equal(lastRequest.body.html, '<p>{{name}}</p>')
+    assert.deepEqual(lastRequest.body.documents, [{ name: 'docuseal-test', html: '<p>{{name}}</p>' }])
     assert.deepEqual(lastRequest.body.submitters, [{ email: 'a@b.com' }])
   })
 
