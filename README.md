@@ -357,7 +357,7 @@ Flags available on list commands:
 | Flag            | Description                               |
 |-----------------|-------------------------------------------|
 | `-l`, `--limit` | Limit number of results                   |
-| `-a`, `--after` | Cursor for pagination                     |
+| `--after`       | Cursor for pagination                     |
 
 Flag available on commands with body parameters:
 

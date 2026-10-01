@@ -146,7 +146,7 @@ Mapping rules:
 ## Common Flags (on list commands)
 
 - `-l` / `--limit` — limit number of results
-- `-a` / `--after` — cursor for pagination
+- `--after` — cursor for pagination
 
 ## Data Flag (on all commands)
 
