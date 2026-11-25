@@ -206,6 +206,11 @@ describe('submitters update', () => {
     })
   })
 
+  test('-d values with numeric field names', async () => {
+    await cli('submitters', 'update', '201', '-d', 'values[1]=yes', '-d', 'values[2]=no')
+    assert.deepEqual(lastRequest.body, { values: { 1: 'yes', 2: 'no' } })
+  })
+
   test('flags + -d combined', async () => {
     await cli('submitters', 'update', '201',
       '--name', 'Jane Doe',

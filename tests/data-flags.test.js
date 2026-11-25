@@ -100,6 +100,26 @@ describe('bracket notation values', () => {
     const result = parseDataFlags(['template_ids[]=1001', 'template_ids[]=1002'])
     assert.deepEqual(result, { template_ids: ['1001', '1002'] })
   })
+
+  test('keeps numeric field names in values as object keys', () => {
+    const result = parseDataFlags(['submitters[0][values][1]=yes', 'submitters[0][values][2]=no'])
+    assert.deepEqual(result, { submitters: [{ values: { 1: 'yes', 2: 'no' } }] })
+  })
+
+  test('keeps a single numeric key in values, metadata and variables', () => {
+    const result = parseDataFlags(['values[5]=yes', 'metadata[0]=a', 'variables[2024]=b'])
+    assert.deepEqual(result, { values: { 5: 'yes' }, metadata: { 0: 'a' }, variables: { 2024: 'b' } })
+  })
+
+  test('keeps arrays nested inside values', () => {
+    const result = parseDataFlags(['values[Colors][]=red', 'values[Colors][]=blue'])
+    assert.deepEqual(result, { values: { Colors: ['red', 'blue'] } })
+  })
+
+  test('still compacts index arrays', () => {
+    const result = parseDataFlags(['submitters[1][email]=a@b.com'])
+    assert.deepEqual(result, { submitters: [{ email: 'a@b.com' }] })
+  })
 })
 
 describe('resolveFiles', () => {

@@ -2,11 +2,15 @@ import { parse } from 'qs'
 import { readFileSync, existsSync } from 'fs'
 import { basename } from 'path'
 
+// Params whose keys are user-defined names (field names, metadata keys, template variables),
+// so numeric keys like values[1] are names, not array indexes.
+const MAP_KEYS = ['values', 'metadata', 'variables']
+
 export function parseDataFlags(pairs) {
   const jsonPairs = pairs.filter(p => p.startsWith('{'))
   const qsPairs = pairs.filter(p => !p.startsWith('{')).map(encodePair)
 
-  let result = qsPairs.length > 0 ? parse(qsPairs.join('&'), { depth: 10, arrayLimit: Infinity }) : {}
+  let result = qsPairs.length > 0 ? fixArrays(parse(qsPairs.join('&'), { depth: 10, arrayLimit: Infinity, allowSparse: true })) : {}
 
   for (const json of jsonPairs) {
     result = deepMerge(result, JSON.parse(json))
@@ -22,6 +26,24 @@ function encodePair(pair) {
   if (pos === -1) return encodeURIComponent(pair)
 
   return encodeURIComponent(pair.slice(0, pos)) + '=' + encodeURIComponent(pair.slice(pos + 1))
+}
+
+// qs parses all-numeric keys as a (sparse) array. Turn those back into objects under MAP_KEYS
+// (everything below a map is user data), and compact every other array as qs does by default.
+function fixArrays(obj, key, inMap = false) {
+  const isMap = !inMap && MAP_KEYS.includes(key)
+
+  if (Array.isArray(obj) && !isMap) return obj.filter(() => true).map(item => fixArrays(item, undefined, inMap))
+
+  if (obj && typeof obj === 'object') {
+    const out = Array.isArray(obj) ? { ...obj } : obj
+
+    for (const k of Object.keys(out)) out[k] = fixArrays(out[k], k, inMap || isMap)
+
+    return out
+  }
+
+  return obj
 }
 
 function resolveFiles(obj) {
